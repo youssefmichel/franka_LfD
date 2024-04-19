@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/dhrikarl/Codes/franka_ws/src/franka_LfD/build/devel/setup.sh
