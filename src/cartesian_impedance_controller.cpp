@@ -11,44 +11,67 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 
-#include "cartesian_impedance_controller.h"
+#include <cartesian_impedance_controller.h>
 
 #include <pseudo_inversion.h>
+#include <ros/package.h> 
+
 
 namespace franka_LfD {
-
-
 
 
 bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
                                                ros::NodeHandle& node_handle) {
   std::vector<double> cartesian_stiffness_vector;
   std::vector<double> cartesian_damping_vector;
-  
+  file_counter_=0 ;
 
 
   
+  ROS_INFO("----------------------------Starting custom !!------------------------------") ;
+  ros::Duration(1.0).sleep();
+  
+  string mode="tele" ; 
+  ros::param::get("/mode", mode) ;
+  std::string packPath = ros::package::getPath("franka_LfD");
+  
+
+
+
+  if(mode== "auto") {
     sub_equilibrium_pose_ = node_handle.subscribe(
+      "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback_learned, this,
+      ros::TransportHints().reliable().tcpNoDelay());
+      ROS_INFO("Current Control Mode: Auto") ; 
+      pose_file_= packPath + "/data/rob_pose_actual.txt" ;
+      } 
+  else {
+
+      sub_equilibrium_pose_ = node_handle.subscribe(
       "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
       ros::TransportHints().reliable().tcpNoDelay());
+      pose_file_= packPath + "/data/rob_pose_demo.txt" ;
 
+      ROS_INFO("Current Control Mode: Tele") ; 
+  }
+
+  
   std::string arm_id;
-  ros::node_handle nh ;
-  
-  
+  //client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
   
   if (!node_handle.getParam("arm_id", arm_id)) {
     ROS_ERROR_STREAM("CartesianImpedanceController: Could not read parameter arm_id");
     return false;
   }
   std::vector<std::string> joint_names;
-  std::ve
+
   if (!node_handle.getParam("joint_names", joint_names) || joint_names.size() != 7) {
     ROS_ERROR(
         "CartesianImpedanceController: Invalid or no joint_names parameters provided, "
         "aborting controller init!");
     return false;
   }
+
 
   auto* model_interface = robot_hw->get<franka_hw::FrankaModelInterface>();
   if (model_interface == nullptr) {
@@ -64,6 +87,7 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
         "CartesianImpedanceController: Exception getting model handle from interface: "
         << ex.what());
     return false;
+  
   }
 
   auto* state_interface = robot_hw->get<franka_hw::FrankaStateInterface>();
@@ -116,9 +140,6 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   cartesian_stiffness_.setZero();
   cartesian_damping_.setZero();
 
-
-  
-
   return true;
 }
 
@@ -144,7 +165,9 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
 
   // set nullspace equilibrium configuration to initial q
   q_d_nullspace_ = q_initial;
-  
+  // position_d_target_(1)=position_d_(1) +0.4 ;
+  // position_d_target_(2)=position_d_(2) +0.2 ;
+
 }
 
 void CartesianImpedanceController::update(const ros::Time& /*time*/,
@@ -204,12 +227,19 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
                        (nullspace_stiffness_ * (q_d_nullspace_ - q) -
                         (2.0 * sqrt(nullspace_stiffness_)) * dq);
   // Desired torque
+    
   tau_d << tau_task + tau_nullspace + coriolis;
   // Saturate torque rate to avoid discontinuities
   tau_d << saturateTorqueRate(tau_d, tau_J_d);
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(tau_d(i));
   }
+
+  pose_vector_.push_back(std::vector<float>()) ;
+  pose_vector_[file_counter_].push_back(position[0]) ;
+  pose_vector_[file_counter_].push_back(position[1]) ;
+  pose_vector_[file_counter_].push_back(position[2]) ;
+  file_counter_++ ;
 
   // update parameters changed online either through dynamic reconfigure or through the interactive
   // target by filtering
@@ -223,7 +253,29 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
       position_and_orientation_d_target_mutex_);
   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
   orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+
+
 }
+
+void CartesianImpedanceController::stopping(const ros::Time& /*time*/) { 
+
+      ROS_INFO("-------------------Saving file -------------------!! ") ;
+      general_utility::saveVectorMatrixToFile(pose_file_,pose_vector_) ;
+
+    //  if (client.call(srv))
+    //  {
+    //      ROS_INFO("Called Trajectory Learner service");
+    //  }
+    // else
+    //  {
+    //      ROS_ERROR("Failed to call service Traj. Learner");
+
+    // }
+
+                                              
+ }
+
+
 
 Eigen::Matrix<double, 7, 1> CartesianImpedanceController::saturateTorqueRate(
     const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
@@ -266,6 +318,16 @@ void CartesianImpedanceController::equilibriumPoseCallback(
     orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
   }
 }
+
+void CartesianImpedanceController::equilibriumPoseCallback_learned(
+    const geometry_msgs::PoseStampedConstPtr& msg) {
+  std::lock_guard<std::mutex> position_d_target_mutex_lock(
+      position_and_orientation_d_target_mutex_);
+  position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
+  std::cout<<"target Pose" << position_d_target_.transpose()<< endl ;
+
+}
+
 
 }  // namespace franka_example_controllers
 

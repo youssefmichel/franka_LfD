@@ -34,9 +34,18 @@ endif()
 # merge Franka + INCLUDE_DIRS in topological order
 list_insert_in_workspace_order(catkin_INCLUDE_DIRS ${Franka_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
+catkin_python_setup()
+
 add_message_files(FILES
   JointTorqueComparison.msg
 )
+
+add_service_files(
+  FILES
+ learn_traj.srv
+)
+
+
 
 generate_messages()
 
@@ -73,6 +82,9 @@ catkin_package(
 
 add_library(${PROJECT_NAME}
   src/cartesian_impedance_controller.cpp
+  src/utility.cpp
+  src/skill_traj_publisher.cpp
+
 )
 
 add_dependencies(${PROJECT_NAME}
@@ -96,16 +108,33 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   include
 )
 
-# add_executable(teleop_gripper_node
-#   src/teleop_gripper_node.cpp
-# )
-# target_include_directories(teleop_gripper_node PUBLIC
-#   ${catkin_INCLUDE_DIRS}
-# )
-# target_link_libraries(teleop_gripper_node PUBLIC
-#   ${Franka_LIBRARIES}
-#   ${catkin_LIBRARIES}
-# )
+add_executable(skill_traj_publisher_node
+   src/skill_traj_publisher_node.cpp
+ )
+
+ add_executable(test_serv
+   src/test_serv.cpp
+ )
+
+
+ target_include_directories(skill_traj_publisher_node PUBLIC
+  ${catkin_INCLUDE_DIRS}
+  include
+ )
+ target_link_libraries(skill_traj_publisher_node PUBLIC
+  ${Franka_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}
+  
+ )
+
+ target_include_directories(test_serv PUBLIC
+  ${catkin_INCLUDE_DIRS}
+ )
+ target_link_libraries(test_serv PUBLIC
+  ${Franka_LIBRARIES}
+   ${catkin_LIBRARIES}
+ )
 # add_dependencies(teleop_gripper_node
 #   ${${PROJECT_NAME}_EXPORTED_TARGETS}
 #   ${catkin_EXPORTED_TARGETS}
@@ -161,3 +190,8 @@ if(PEP_TOOLS)
   file(GLOB_RECURSE PYSOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.py)
   add_pyformat_target(franka_control FILES ${PYSOURCES})
 endif()
+
+catkin_install_python(PROGRAMS 
+ scripts/learn_traj_server.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
