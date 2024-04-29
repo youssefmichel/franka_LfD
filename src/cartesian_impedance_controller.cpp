@@ -34,7 +34,20 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   string mode="tele" ; 
   ros::param::get("/mode", mode) ;
   std::string packPath = ros::package::getPath("franka_LfD");
-  
+
+  marker_pose_pub_ = node_handle.advertise<visualization_msgs::Marker>("visualization_marker",10) ;
+  act_pos_lines_.header.frame_id= "panda_link0"  ;
+  act_pos_lines_.ns="franka_act_pose_viz" ;
+  act_pos_lines_.scale.x=0.003 ;
+   act_pos_lines_.scale.y=0.003 ;
+
+ 
+  act_pos_lines_.pose.orientation.w= 1.0 ;
+  act_pos_lines_.id=1 ; 
+  act_pos_lines_.type= visualization_msgs::Marker::LINE_STRIP;  
+  act_pos_lines_.color.r = 1.0;
+  act_pos_lines_.color.a = 1.0;
+
 
 
 
@@ -143,6 +156,24 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   return true;
 }
 
+
+void CartesianImpedanceController::visualize_act_pose(Eigen::Vector3d act_pose) {
+
+  act_pos_lines_.header.stamp=ros::Time::now() ;
+  geometry_msgs::Point point ; 
+  point.x=act_pose(0) ;
+  point.y=act_pose(1) ;
+  point.z=act_pose(2) ;
+   act_pos_lines_.action=visualization_msgs::Marker::ADD ;
+
+  act_pos_lines_.points.push_back(point) ;
+  marker_pose_pub_.publish(act_pos_lines_) ;
+  
+
+   
+
+
+}
 
 
 void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
@@ -253,6 +284,8 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
       position_and_orientation_d_target_mutex_);
   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
   orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+
+  visualize_act_pose(position) ;
 
 
 }

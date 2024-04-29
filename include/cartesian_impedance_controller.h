@@ -16,7 +16,7 @@
 #include <ros/time.h>
 #include <ros/ros.h>
 #include <Eigen/Dense>
-
+#include <visualization_msgs/Marker.h>
 #include <franka_LfD/compliance_paramConfig.h>
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/franka_state_interface.h>
@@ -60,12 +60,18 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
   Eigen::Vector3d position_d_target_;
   Eigen::Quaterniond orientation_d_target_;
 
+  ros::Publisher marker_pose_pub_ ;
+  visualization_msgs::Marker act_pos_lines_ ;
+  
+
   ros::Subscriber des_pose_sub_ ;
 
 
    std::vector <std::vector <float> > pose_vector_ ;
    std::string pose_file_ ;
    int file_counter_ ;
+
+   void visualize_act_pose(Eigen::Vector3d act_pose) ;
 
 //   ros::ServiceClient client ;
 //   franka_LfD::learn_traj srv;

@@ -69,7 +69,7 @@ namespace franka_LfD {
 
         points_.points.push_back(curr_point) ;
         points_.id= 0 ; 
-        points_.type=visualization_msgs::Marker::POINTS ;
+        points_.type=visualization_msgs::Marker::SPHERE_LIST;
         points_.scale.x=0.005 ;
         points_.scale.y=0.005 ;
         points_.color.g=1.0f ;
@@ -122,7 +122,7 @@ namespace franka_LfD {
                 des_pose_msg_.pose.position.z=curr_traj[file_counter][2]  ;
                 //std::cout<<"Publishing: "<< des_pose_msg_.pose.position.x << " y: "<< des_pose_msg_.pose.position.y <<endl ;
                 des_traj_pub_.publish(des_pose_msg_) ;
-                if(t_elap>0.5) {
+                if(t_elap>1) {
                 visualize_des_pose() ;
                 t_elap=0 ;
                 }
