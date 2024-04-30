@@ -2,8 +2,6 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg import Twist
-from turtlesim.msg import Pose
-
 import math  as math
 import numpy as np 
 import scipy as scip
@@ -43,8 +41,6 @@ class lwr:
         
 
         self.Time_tot= self.N_points  *self.dt
-
-
         self.Time= np.linspace(0,self.Time_tot,self.N_points) 
         self.N_models= 8
         self.centers=np.linspace(0,self.Time_tot,self.N_models)

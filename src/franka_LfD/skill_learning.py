@@ -77,7 +77,6 @@ class skill_learner:
 
             lwr_learner = lwr(Des_traj_data=curr_traj) 
             lwr_learner.learn_lwr()
-            
             traj_learnt=lwr_learner.regression()
             rospack = rospkg.RosPack()
             rospack.list() 
@@ -85,10 +84,6 @@ class skill_learner:
             packpath="/home/dhrikarl/Codes/franka_ws/src/franka_LfD"
             file_path=packpath+ "/data/skill_"+str(i) +".txt" 
             np.savetxt(file_path, traj_learnt, fmt='%.3f')
-     
-            
-     
-
             plt.plot(curr_traj)
             plt.plot(traj_learnt,'--')
             plt.show()
@@ -99,26 +94,13 @@ class skill_learner:
     def learn_skill(self): 
         self.segment_traj() 
         self.encode_skills( )
-
-        
         
         plt.show()
-
-
 
         print("indices start: ", self.indices_start) 
         print("indices end: ", self.indices_end) 
 
-            
-            
-
     
-        
-        
-        
-
-
-
 
 if __name__ == '__main__': 
 
