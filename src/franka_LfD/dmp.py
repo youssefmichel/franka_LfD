@@ -55,14 +55,6 @@ class dmp:
 
         self.canonical_dynamics() 
 
-        # plt.plot(self.Des_traj)
-        # plt.show()
-
- 
-        
-        # plt.plot(self.decay)
-        # plt.show()
-    
     def learn_dmp(self): 
 
         self.Mu = np.linspace(0, self.time_end, self.dmp_params.n_models) 

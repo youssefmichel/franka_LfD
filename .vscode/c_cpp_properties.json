@@ -3,7 +3,9 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/opt/ros/noetic/include/**",
+                "~/catkin_ws/devel/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

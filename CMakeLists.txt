@@ -84,6 +84,7 @@ add_library(${PROJECT_NAME}
   src/cartesian_impedance_controller.cpp
   src/utility.cpp
   src/skill_traj_publisher.cpp
+  src/joystick_reader.cpp
 
 )
 
@@ -116,6 +117,11 @@ add_executable(skill_traj_publisher_node
    src/test_serv.cpp
  )
 
+ add_executable(joystick_reader_node
+ src/joystick_reader_node.cpp
+)
+
+
 
  target_include_directories(skill_traj_publisher_node PUBLIC
   ${catkin_INCLUDE_DIRS}
@@ -127,6 +133,17 @@ add_executable(skill_traj_publisher_node
   ${PROJECT_NAME}
   
  )
+
+ target_include_directories(joystick_reader_node PUBLIC
+ ${catkin_INCLUDE_DIRS}
+ include
+)
+target_link_libraries(joystick_reader_node PUBLIC
+ ${Franka_LIBRARIES}
+ ${catkin_LIBRARIES}
+ ${PROJECT_NAME}
+ 
+)
 
  target_include_directories(test_serv PUBLIC
   ${catkin_INCLUDE_DIRS}

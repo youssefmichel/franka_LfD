@@ -111,9 +111,6 @@ namespace franka_LfD {
             int dim_traj= curr_traj.size() ;
             realtype t_elap= 0 ;
             
-         
-
-
             while(ros::ok() && file_counter < dim_traj-2) {
 
     
