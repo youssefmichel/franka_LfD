@@ -60,9 +60,15 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
       } 
   else {
 
-      sub_equilibrium_pose_ = node_handle.subscribe(
-      "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
+      // sub_equilibrium_pose_ = node_handle.subscribe(
+      // "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
+      // ros::TransportHints().reliable().tcpNoDelay());
+
+          sub_equilibrium_pose_ = node_handle.subscribe(
+      "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback_learned, this,
       ros::TransportHints().reliable().tcpNoDelay());
+
+      
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
 
       ROS_INFO("Current Control Mode: Tele") ; 
