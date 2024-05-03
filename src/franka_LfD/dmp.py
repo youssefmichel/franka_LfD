@@ -53,7 +53,9 @@ class dmp:
         self.Des_traj_dot= self.interpolate_traj(self.Des_traj_dot,self.n_points)
         self.Des_traj_ddot= self.interpolate_traj(self.Des_traj_ddot,self.n_points)
 
-        self.canonical_dynamics() 
+        self.decay= canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt)
+        plt.plot(self.decay) 
+        plt.show()
 
     def learn_dmp(self): 
 
@@ -76,7 +78,7 @@ class dmp:
         for i in range(self.dmp_params.n_models):
             sum=0 
             for j in range(self.n_points):
-                temp= self.gauss_pdf(self.decay[j], self.sigma, self.Mu[i]) 
+                temp= gauss_pdf(self.decay[j], self.sigma, self.Mu[i]) 
                 H[i,j]=temp
                 sum=sum+temp 
 
@@ -125,12 +127,20 @@ class dmp:
         x_intp=f_spline(t_new)
         return x_intp
     
-    def canonical_dynamics(self):
-        self.decay=[]
-        for i in range(self.n_points):
-            self.decay.append( np.exp(-self.dmp_params.alpha* (i)*self.dmp_params.dt)) 
+    # def canonical_dynamics(self):
+    #     self.decay=[]
+    #     for i in range(self.n_points):
+    #         self.decay.append( np.exp(-self.dmp_params.alpha* (i)*self.dmp_params.dt)) 
+    #     return self.decay 
     
-    def gauss_pdf(self,x,h_i,c_i): 
+def canonical_dynamics(n_points,alpha,dt):
+        decay=[]
+        for i in range(n_points):
+           decay.append( np.exp(-alpha* (i)*dt)) 
+
+        return decay 
+
+def gauss_pdf(x,h_i,c_i): 
         return math.exp(-h_i * math.pow((x-c_i),2))  
 
 

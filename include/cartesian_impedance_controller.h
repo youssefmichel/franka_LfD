@@ -68,7 +68,9 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
 
 
    std::vector <std::vector <float> > pose_vector_ ;
+   std::vector <std::vector <float> > pose_quat_vector_ ;
    std::string pose_file_ ;
+   std::string pose_file_quat_ ;
    int file_counter_ ;
 
    void visualize_act_pose(Eigen::Vector3d act_pose) ;

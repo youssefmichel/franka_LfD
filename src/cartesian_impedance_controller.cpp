@@ -57,6 +57,8 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
       ros::TransportHints().reliable().tcpNoDelay());
       ROS_INFO("Current Control Mode: Auto") ; 
       pose_file_= packPath + "/data/rob_pose_actual.txt" ;
+      pose_file_quat_= packPath + "/data/rob_pose_quat_actual.txt" ;
+
       } 
   else {
 
@@ -70,6 +72,7 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
 
       
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
+      pose_file_quat_= packPath + "/data/rob_pose_quat_demo.txt" ;
 
       ROS_INFO("Current Control Mode: Tele") ; 
   }
@@ -276,6 +279,19 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
   pose_vector_[file_counter_].push_back(position[0]) ;
   pose_vector_[file_counter_].push_back(position[1]) ;
   pose_vector_[file_counter_].push_back(position[2]) ;
+
+  pose_quat_vector_.push_back(std::vector<float>()) ;
+  pose_quat_vector_[file_counter_].push_back(orientation.w()) ;
+  pose_quat_vector_[file_counter_].push_back(orientation.x()) ;
+  pose_quat_vector_[file_counter_].push_back(orientation.y()) ;
+  pose_quat_vector_[file_counter_].push_back(orientation.z()) ;
+
+  Eigen::Vector3d velocity= jacobian * dq ;
+  pose_quat_vector_[file_counter_].push_back(velocity[3]) ;
+  pose_quat_vector_[file_counter_].push_back(velocity[4]) ;
+  pose_quat_vector_[file_counter_].push_back(velocity[5]) ;
+  
+
   file_counter_++ ;
 
   // update parameters changed online either through dynamic reconfigure or through the interactive
@@ -300,6 +316,7 @@ void CartesianImpedanceController::stopping(const ros::Time& /*time*/) {
 
       ROS_INFO("-------------------Saving file -------------------!! ") ;
       general_utility::saveVectorMatrixToFile(pose_file_,pose_vector_) ;
+      general_utility::saveVectorMatrixToFile(pose_file_quat_,pose_quat_vector_) ;
 
     //  if (client.call(srv))
     //  {

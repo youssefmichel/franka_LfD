@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
   ros::NodeHandle nh ;
   franka_LfD::joystick_reader my_joystick_reader = franka_LfD::joystick_reader(3,nh) ; 
   my_joystick_reader.publish_ref_position() ;
-
+  
   return 0 ;
 
 
