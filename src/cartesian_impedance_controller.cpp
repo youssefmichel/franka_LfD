@@ -62,13 +62,13 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
       } 
   else {
 
-      // sub_equilibrium_pose_ = node_handle.subscribe(
-      // "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
-      // ros::TransportHints().reliable().tcpNoDelay());
-
-          sub_equilibrium_pose_ = node_handle.subscribe(
-      "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback_learned, this,
+      sub_equilibrium_pose_ = node_handle.subscribe(
+      "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
       ros::TransportHints().reliable().tcpNoDelay());
+
+      //     sub_equilibrium_pose_ = node_handle.subscribe(
+      // "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback_learned, this,
+      // ros::TransportHints().reliable().tcpNoDelay());
 
       
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
@@ -286,7 +286,7 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
   pose_quat_vector_[file_counter_].push_back(orientation.y()) ;
   pose_quat_vector_[file_counter_].push_back(orientation.z()) ;
 
-  Eigen::Vector3d velocity= jacobian * dq ;
+  Vec velocity= jacobian * dq ;
   pose_quat_vector_[file_counter_].push_back(velocity[3]) ;
   pose_quat_vector_[file_counter_].push_back(velocity[4]) ;
   pose_quat_vector_[file_counter_].push_back(velocity[5]) ;

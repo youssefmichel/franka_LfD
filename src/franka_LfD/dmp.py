@@ -49,9 +49,9 @@ class dmp:
         self.Des_traj_ddot=filtfilt(b,a,self.Des_traj_ddot,axis=0) 
 
         self.n_points=1000 
-        self.Des_traj= self.interpolate_traj(self.Des_traj,self.n_points)
-        self.Des_traj_dot= self.interpolate_traj(self.Des_traj_dot,self.n_points)
-        self.Des_traj_ddot= self.interpolate_traj(self.Des_traj_ddot,self.n_points)
+        self.Des_traj= interpolate_traj(self.Des_traj,self.n_points)
+        self.Des_traj_dot=interpolate_traj(self.Des_traj_dot,self.n_points)
+        self.Des_traj_ddot= interpolate_traj(self.Des_traj_ddot,self.n_points)
 
         self.decay= canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt)
         plt.plot(self.decay) 
@@ -72,7 +72,6 @@ class dmp:
             data_dmp_list.append( temp ) 
         
         data_dmp=np.array(data_dmp_list)
-
         H = np.zeros( (self.dmp_params.n_models, self.n_points) )
 
         for i in range(self.dmp_params.n_models):
@@ -119,7 +118,7 @@ class dmp:
 
 
 
-    def interpolate_traj(self,x_traj,n_points):
+def interpolate_traj(x_traj,n_points):
 
         t_old= np.linspace(0,1, len(x_traj))
         f_spline = scip.interpolate.make_interp_spline(t_old, x_traj) 
