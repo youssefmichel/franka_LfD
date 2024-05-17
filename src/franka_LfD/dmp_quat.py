@@ -10,14 +10,16 @@ from scipy.signal import filtfilt, butter
 from collections import namedtuple
 from dataclasses import dataclass
 from pyquaternion import Quaternion
+from myQuaternion import myQuaternion
 from dmp import gauss_pdf, canonical_dynamics, interpolate_traj
 
 class dmp_params_quat:
-    dt: float= 0.01 
-    n_models: int= 4 
-    alpha: float= 0.03
-    kp: float=50 
-    kd: float= np.sqrt(2*kp)
+    dt: float= 0.001
+    n_models: int= 14
+    alpha: float= 0.1
+    kp: float=10 
+    kd: float= 2*1.0* np.sqrt(kp)
+    
 
 
 class dmp_quat: 
@@ -26,9 +28,9 @@ class dmp_quat:
         if model_file is not None:
             # Load model from file
             temp=np.genfromtxt(model_file) 
-            self.Des_traj= temp[:,:4] 
+            self.Des_traj= temp[2500:,:4] 
 
-            self.Omega= temp[:, -3:] 
+            self.Omega= temp[2500:, -3:] 
     
 
         elif Des_traj_data is not None:
@@ -39,19 +41,23 @@ class dmp_quat:
 
         self.dmp_params=dmp_params_quat()  
         order=2
-        cutoff_freq=9
+        cutoff_freq=15
         self.n_points=len(self.Des_traj)
+        self.n_points=2000 
+
+
         self.time_end= self.n_points* self.dmp_params.dt 
     
         b, a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
 
         self.Des_traj=filtfilt(b,a,self.Des_traj,axis=0) 
-    
-        
+        self.Des_traj= interpolate_traj(self.Des_traj,self.n_points)
+        self.Omega= interpolate_traj(self.Omega,self.n_points)
+      
         self.Omega_dot= np.diff(self.Omega,axis=0) /self.dmp_params.dt 
-
         self.Omega_dot =  interpolate_traj(self.Omega_dot,self.n_points)
-        self.quat_goal=quat_curr=Quaternion(self.Des_traj[self.n_points-1,:4]) 
+
+        self.quat_goal=Quaternion(self.Des_traj[self.n_points-1,:4]) 
        
         self.decay=canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt) 
 
@@ -86,41 +92,43 @@ class dmp_quat:
 
     def simulate_dmp_dynamics(self):
         quat_curr= Quaternion(self.Des_traj[0,:]) 
+
+     
         omega=self.Omega[0,:]*0 
         sim_traj=[]
         ref_acc_list=[] 
-
+    
+        quat_diff= myQuaternion.log_map(self.quat_goal, quat_curr)
+        flag=True
+   
         
         for i in range(self.n_points): 
-      
-            quat_conj=quat_curr.conjugate
-            quat_prod=self.quat_goal* quat_conj  
-            quat_diff= Quaternion.log(quat_prod) 
-            quat_diff_vec=np.array([quat_diff.x, quat_diff.y, quat_diff.z])
-            ref_acc= self.dmp_params.kp* 2.0* quat_diff_vec  - self.dmp_params.kd *omega + self.currF[:,i] *self.decay[i]
    
+            quat_diff= myQuaternion.log_map( quat_curr, self.quat_goal )
+            quat_diff_vec=quat_diff
+            
+            ref_acc= self.dmp_params.kp* 1.0* quat_diff_vec  - self.dmp_params.kd *omega + 1* self.currF[:,i] *self.decay[i]
+     
             omega=omega + self.dmp_params.dt* ref_acc 
-            
-            
-            
-            eta= self.dmp_params.dt/2* omega 
+                
+            eta= self.dmp_params.dt*0.5* omega 
+            quat_tmp= myQuaternion.exp_map(eta, quat_curr)
           
-            eta_quat= Quaternion(0, eta[0], eta[1], eta[2]) 
-           
 
-            quat_tmp= Quaternion.exp_map(quat_curr, eta_quat ) 
-            quat_curr=quat_tmp*quat_curr 
-            quat_curr=Quaternion(self.Des_traj[i,:])
 
-            
+            quat_curr=quat_tmp
             quat_curr_vec=np.array([quat_curr.w, quat_curr.x, quat_curr.y, quat_curr.z])
             sim_traj.append(quat_curr_vec) 
             ref_acc_list.append(ref_acc)
         
         
         sim_res=np.array(sim_traj) 
-        print(len([sim_res]))
-        plt.plot(ref_acc_list) 
+ 
+        plt.plot(sim_traj) 
+        plt.plot(self.Des_traj,'--')
+        plt.show()
+
+        plt.plot(ref_acc_list)
         plt.show()
 
         return sim_res
@@ -133,12 +141,12 @@ class dmp_quat:
 
         for i in range(self.n_points): 
             quat_curr=Quaternion(self.Des_traj[i,:]) 
-            quat_conj=quat_curr.conjugate
-            quat_prod=self.quat_goal* quat_conj  
-            quat_diff= Quaternion.log(quat_prod) 
-            quat_diff_vec=np.array([quat_diff.x, quat_diff.y, quat_diff.z])
-            Y= self.Omega_dot[i,:]*self.dmp_params.dt  - self.dmp_params.kp * 2.0 * quat_diff_vec
-            - self.dmp_params.kd *self.Omega[i,:] *self.dmp_params.dt 
+        
+            quat_diff= myQuaternion.log_map( quat_curr, self.quat_goal )
+            quat_diff_vec=quat_diff
+
+            Y= self.Omega_dot[i,:] - self.dmp_params.kp * 1.0 * quat_diff_vec
+            + self.dmp_params.kd *self.Omega[i,:] 
            
             Y=Y/max(self.decay[i],0.01)
             data_dmp_list.append(Y) 
