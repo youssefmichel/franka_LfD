@@ -17,7 +17,7 @@ class myQuaternion(Quaternion):
         eta_norm=np.linalg.norm(eta) 
         eta_vec  = eta / eta_norm 
 
-        if (eta_norm < 1e-4):
+        if (eta_norm < 1e-9):
             # return Quaternion(1,0,0,0) 
             return q 
 
@@ -26,6 +26,7 @@ class myQuaternion(Quaternion):
             q_temp= Quaternion(scalar= np.cos(eta_norm) , vector= np.sin(eta_norm)*eta_vec)
             
             return q_temp *q 
+            # return q_temp 
         
     @classmethod
     def log_map(cls, q_1, q_2 ): 
@@ -55,7 +56,8 @@ if __name__ == '__main__':
      q2= myQuaternion(1,0,0,0) 
 
      print("log", myQuaternion.log_map(q2,q1))
-     eta=[0.1 ,0.2, 0.1]
+     omega = np.array([0.006, -0.008, 0.0196])
+     eta = -0.5  * omega
      q_res=myQuaternion.exp_map(eta,q1)  
      print("Exg",q_res)
 

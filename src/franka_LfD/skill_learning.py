@@ -29,7 +29,7 @@ class skill_learner:
         self.Des_traj[:,0]=filtfilt(self.b,self.a,self.Des_traj[:,0])
         self.Des_traj[:,1]=filtfilt(self.b,self.a,self.Des_traj[:,1])
         self.Des_traj[:,2]=filtfilt(self.b,self.a,self.Des_traj[:,2])
-        self.Des_traj_dot= np.diff(self.Des_traj,axis=0) /self.dt
+        self.Des_traj_dot= np.diff(self.Des_traj,axis=0) /self.dt 
         self.Des_traj_dot_norm=np.linalg.norm(self.Des_traj_dot,axis=1) 
         self.vel_thresh=0.01 
         self.n_segments=1 
@@ -45,6 +45,7 @@ class skill_learner:
         flag_new=True 
         last_ind=0 
         moved_flag=False
+        
         for i in range(len(self.Des_traj_dot_norm)): 
             phase_dur= (i-last_ind)*self.dt
 
@@ -61,12 +62,13 @@ class skill_learner:
             if( np.mean(self.Des_traj_dot_norm[i:i+100]) <self.vel_thresh and flag_new==False and phase_dur>1 and moved_flag):
                 self.indices_end.append(i)
                 flag_new=True  
-               # moved_flag=False
-        
+               
+    
         self.traj_segments=[]
         print(self.indices_start)
         print(self.indices_end)
         self.traj_segments_quat= [] 
+
         for i in range (len(self.indices_start)) : 
 
             temp_traj=self.Des_traj[self.indices_start[i] : self.indices_end[i],:] 
@@ -89,18 +91,15 @@ class skill_learner:
                 lwr_learner = lwr(Des_traj_data=curr_traj) 
                 lwr_learner.learn_lwr()
                 traj_learnt=lwr_learner.regression()
-            else 
+            else:
                 DMP_learner= dmp(Des_traj_data=curr_traj)
                 DMP_learner_quat= dmp_quat(Des_traj_data=curr_traj_quat) 
                 DMP_learner.learn_dmp() 
                 traj_learnt= DMP_learner.simulate_dmp_dynamics() 
-
                 DMP_learner_quat.learn_dmp()
                 traj_learnt_quat = DMP_learner_quat.simulate_dmp_dynamics()
 
 
-
-            
             rospack = rospkg.RosPack()
             rospack.list() 
            # packpath= rospack.get_path('franka_LfD') 
@@ -116,7 +115,6 @@ class skill_learner:
             plt.plot(curr_traj_quat)
             plt.plot(traj_learnt_quat,'--')
             plt.show()
-
             self.learnt_traj.append(traj_learnt)
 
         return self.learnt_traj

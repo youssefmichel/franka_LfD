@@ -54,8 +54,6 @@ class dmp:
         self.Des_traj_ddot= interpolate_traj(self.Des_traj_ddot,self.n_points)
 
         self.decay= canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt)
-        plt.plot(self.decay) 
-        plt.show()
 
     def learn_dmp(self): 
 
@@ -89,16 +87,11 @@ class dmp:
         self.Muf_list= []
         H_inv= np.linalg.pinv(H)
         Y= data_dmp
-        print( Y.shape)
+   
         self.currF= data_dmp.T @ H_inv 
         self.currF = self.currF @ H 
-        print(self.currF)
-
-
-
-        plt.plot(H.transpose())
-        plt.show()
-
+    
+      
     def simulate_dmp_dynamics(self): 
         
         x= self.Des_traj[0,:]
@@ -111,8 +104,13 @@ class dmp:
             sim_traj.append(x) 
         
         sim_res=np.array(sim_traj) 
-        plt.plot(sim_res[:,0],sim_res[:,1],'--')
-        plt.plot(self.Des_traj[:,0],self.Des_traj[:,1])
+     
+
+        plt.plot(sim_res, label='DMP') 
+        plt.plot(self.Des_traj,'--', label = 'Learnt')
+        plt.legend()
+        plt.title('DMP Learning')
+        plt.grid(True)
         plt.show()
         return sim_res
 

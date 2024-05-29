@@ -15,9 +15,9 @@ from dmp import gauss_pdf, canonical_dynamics, interpolate_traj
 
 class dmp_params_quat:
     dt: float= 0.001
-    n_models: int= 14
-    alpha: float= 0.1
-    kp: float=10 
+    n_models: int= 6
+    alpha: float= 2
+    kp: float=0.0001 #spring part affects learning @TODO: Check
     kd: float= 2*1.0* np.sqrt(kp)
     
 
@@ -26,40 +26,41 @@ class dmp_quat:
     def __init__(self,model_file = None , Des_traj_data= None ): 
        
         if model_file is not None:
-            # Load model from file
+            
             temp=np.genfromtxt(model_file) 
-            self.Des_traj= temp[2500:,:4] 
-
-            self.Omega= temp[2500:, -3:] 
-    
-
+            self.Des_traj= temp[3000:7000,:4] 
+            self.Omega= temp[3000:7000, -3:] 
+            
         elif Des_traj_data is not None:
-            # Use the provided matrix   
+           
             self.Des_traj = Des_traj_data  # @TODO Omega
         else:
             raise ValueError("Either model_file or Data matrix must be provided !!!")
 
+
+        
         self.dmp_params=dmp_params_quat()  
         order=2
         cutoff_freq=15
         self.n_points=len(self.Des_traj)
-        self.n_points=2000 
-
+        # self.n_points=2000 
 
         self.time_end= self.n_points* self.dmp_params.dt 
-    
         b, a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
 
         self.Des_traj=filtfilt(b,a,self.Des_traj,axis=0) 
         self.Des_traj= interpolate_traj(self.Des_traj,self.n_points)
         self.Omega= interpolate_traj(self.Omega,self.n_points)
+        self.Omega=filtfilt(b,a,self.Omega,axis=0) 
       
         self.Omega_dot= np.diff(self.Omega,axis=0) /self.dmp_params.dt 
         self.Omega_dot =  interpolate_traj(self.Omega_dot,self.n_points)
+        self.Omega_dot=filtfilt(b,a,self.Omega_dot,axis=0) 
 
         self.quat_goal=Quaternion(self.Des_traj[self.n_points-1,:4]) 
        
         self.decay=canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt) 
+     
 
         
 
@@ -84,7 +85,6 @@ class dmp_quat:
         self.Muf_list= []
         H_inv= np.linalg.pinv(H)
         Y= self.data_dmp
-
         self.currF= self.data_dmp.T @ H_inv 
         self.currF = self.currF @ H 
 
@@ -94,7 +94,7 @@ class dmp_quat:
         quat_curr= Quaternion(self.Des_traj[0,:]) 
 
      
-        omega=self.Omega[0,:]*0 
+        omega=self.Omega[0,:]*1
         sim_traj=[]
         ref_acc_list=[] 
     
@@ -105,18 +105,16 @@ class dmp_quat:
         for i in range(self.n_points): 
    
             quat_diff= myQuaternion.log_map( quat_curr, self.quat_goal )
-            quat_diff_vec=quat_diff
-            
-            ref_acc= self.dmp_params.kp* 1.0* quat_diff_vec  - self.dmp_params.kd *omega + 1* self.currF[:,i] *self.decay[i]
+
+            ref_acc= self.dmp_params.kp* quat_diff - self.dmp_params.kd *omega + 1* self.currF[:,i] *self.decay[i]
      
             omega=omega + self.dmp_params.dt* ref_acc 
-                
+
             eta= self.dmp_params.dt*0.5* omega 
             quat_tmp= myQuaternion.exp_map(eta, quat_curr)
-          
-
-
+        
             quat_curr=quat_tmp
+            
             quat_curr_vec=np.array([quat_curr.w, quat_curr.x, quat_curr.y, quat_curr.z])
             sim_traj.append(quat_curr_vec) 
             ref_acc_list.append(ref_acc)
@@ -124,12 +122,14 @@ class dmp_quat:
         
         sim_res=np.array(sim_traj) 
  
-        plt.plot(sim_traj) 
-        plt.plot(self.Des_traj,'--')
+        plt.plot(sim_traj, label='DMP') 
+        plt.plot(self.Des_traj,'--', label = 'Actual')
+        plt.legend()
+        plt.title('DMP Learning, Unit Quaternions')
+        plt.grid(True)
         plt.show()
 
-        plt.plot(ref_acc_list)
-        plt.show()
+     
 
         return sim_res
 
@@ -145,20 +145,15 @@ class dmp_quat:
             quat_diff= myQuaternion.log_map( quat_curr, self.quat_goal )
             quat_diff_vec=quat_diff
 
-            Y= self.Omega_dot[i,:] - self.dmp_params.kp * 1.0 * quat_diff_vec
+            Y= self.Omega_dot[i,:] - self.dmp_params.kp  * quat_diff_vec
             + self.dmp_params.kd *self.Omega[i,:] 
            
             Y=Y/max(self.decay[i],0.01)
             data_dmp_list.append(Y) 
          
-        
-
         self.data_dmp=np.array(data_dmp_list)
 
 
-  
-
-        
 
         
 
