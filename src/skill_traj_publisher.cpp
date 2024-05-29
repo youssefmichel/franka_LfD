@@ -24,8 +24,7 @@ namespace franka_LfD {
         //points_.header.frame_id =link_name ;
 
 
-        
-        
+    
 
         std::string arm_id;
      //client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
@@ -46,9 +45,13 @@ namespace franka_LfD {
         for (int i=0 ; i <n_skills ; i++ ) {
 
             string pose_file= packPath + "/data/skill_" + std::to_string(i) + ".txt" ;
+            string pose_file_quat= packPath + "/data/skill_quat_" + std::to_string(i) + ".txt" ;
             std::vector<std::vector<float>> temp_vec ;
             general_utility::loadVectorMatrixFromFile(pose_file, n_DOF,  temp_vec) ;
+            std::vector<std::vector<float>> temp_vec_quat ;
+            general_utility::loadVectorMatrixFromFile(pose_file_quat, 4,  temp_vec_quat) ;
             Des_traj_list_.push_back(temp_vec) ;
+            Des_traj_quat_list_.push_back(temp_vec_quat) ;
 
         }
 
@@ -108,6 +111,7 @@ namespace franka_LfD {
 
             int file_counter= 0 ; 
             std::vector <std::vector <float>> curr_traj = Des_traj_list_.at(i) ; 
+            std::vector <std::vector <float>> curr_traj_quat = Des_traj_quat_list_.at(i) ; 
             int dim_traj= curr_traj.size() ;
             realtype t_elap= 0 ;
             
@@ -117,6 +121,12 @@ namespace franka_LfD {
                 des_pose_msg_.pose.position.x=curr_traj[file_counter][0]  ;
                 des_pose_msg_.pose.position.y=curr_traj[file_counter][1]  ;
                 des_pose_msg_.pose.position.z=curr_traj[file_counter][2]  ;
+                
+                des_pose_msg_.pose.orientation.w=curr_traj_quat[file_counter][0]  ;
+                des_pose_msg_.pose.orientation.x=curr_traj_quat[file_counter][1]  ;
+                des_pose_msg_.pose.orientation.y=curr_traj_quat[file_counter][2]  ;
+                des_pose_msg_.pose.orientation.z=curr_traj_quat[file_counter][3]  ;
+
                 //std::cout<<"Publishing: "<< des_pose_msg_.pose.position.x << " y: "<< des_pose_msg_.pose.position.y <<endl ;
                 des_traj_pub_.publish(des_pose_msg_) ;
                 if(t_elap>1) {

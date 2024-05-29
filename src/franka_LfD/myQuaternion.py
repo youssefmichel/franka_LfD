@@ -49,6 +49,18 @@ class myQuaternion(Quaternion):
         else: 
             return np.zeros(3) 
     
+    @classmethod
+    def quat_2_omega(Q,dt):
+        N=len(Q) 
+        t = np.linspace(dt, N*dt , N ) 
+
+        for i in range(N): 
+            q_curr= Quaternion( Q[i,0] , Q[i,1] , Q[i,2] , Q[i,3]  )
+            tmp = myQuaternion.norm()
+
+    # differentiate a quaternion trajectory 
+
+    
 
 if __name__ == '__main__':  
 

@@ -36,6 +36,7 @@ namespace franka_LfD {
             ros::Publisher des_traj_pub_ ;
             int n_skills_ ;
             std::vector <std::vector <std::vector <float>>> Des_traj_list_ ;
+            std::vector <std::vector <std::vector <float>>> Des_traj_quat_list_ ;
             geometry_msgs::PoseStamped des_pose_msg_ ;
             
             void update_act_rob_pose_callback(geometry_msgs::PoseStamped::ConstPtr& act_rob_pose) ;

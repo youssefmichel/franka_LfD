@@ -31,7 +31,7 @@ class skill_learner:
         self.Des_traj[:,2]=filtfilt(self.b,self.a,self.Des_traj[:,2])
         self.Des_traj_dot= np.diff(self.Des_traj,axis=0) /self.dt 
         self.Des_traj_dot_norm=np.linalg.norm(self.Des_traj_dot,axis=1) 
-        self.vel_thresh=0.01 
+        self.vel_thresh=0.02
         self.n_segments=1 
 
         plt.plot(self.Des_traj)
@@ -56,7 +56,7 @@ class skill_learner:
                 moved_flag=False
 
             if(flag_new==False): 
-                if(np.mean(self.Des_traj_dot_norm[i:i+100])>0.03):
+                if(np.mean(self.Des_traj_dot_norm[i:i+100])>self.vel_thresh):
                    moved_flag=True 
                    
             if( np.mean(self.Des_traj_dot_norm[i:i+100]) <self.vel_thresh and flag_new==False and phase_dur>1 and moved_flag):
@@ -65,8 +65,7 @@ class skill_learner:
                
     
         self.traj_segments=[]
-        print(self.indices_start)
-        print(self.indices_end)
+
         self.traj_segments_quat= [] 
 
         for i in range (len(self.indices_start)) : 
@@ -85,7 +84,7 @@ class skill_learner:
             curr_traj=self.traj_segments[i] 
             curr_traj_quat=self.traj_segments_quat[i]
             
-            print(len(curr_traj))
+            
 
             if mode == "LWR":
                 lwr_learner = lwr(Des_traj_data=curr_traj) 
@@ -108,13 +107,7 @@ class skill_learner:
             file_path_quat=packpath+ "/data/skill_quat_"+str(i) +".txt" 
             np.savetxt(file_path, traj_learnt, fmt='%.3f')
             np.savetxt(file_path_quat, traj_learnt_quat, fmt='%.3f')
-            plt.plot(curr_traj)
-            plt.plot(traj_learnt,'--')
-            plt.show()
-            plt.figure()
-            plt.plot(curr_traj_quat)
-            plt.plot(traj_learnt_quat,'--')
-            plt.show()
+        
             self.learnt_traj.append(traj_learnt)
 
         return self.learnt_traj

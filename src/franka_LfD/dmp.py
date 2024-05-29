@@ -12,11 +12,11 @@ from dataclasses import dataclass
 
 
 class dmp_params:
-    dt: float= 0.01 
-    n_models: int= 4 
-    alpha: float= 1
+    dt: float= 0.001 
+    n_models: int= 6
+    alpha: float= 0.1
     kp: float=50 
-    kd: float= np.sqrt(2*kp)
+    kd: float= 1*np.sqrt(2*kp)
 
 
 class dmp: 
@@ -48,12 +48,15 @@ class dmp:
         self.Des_traj_ddot=np.diff(self.Des_traj_dot,axis=0)/self.dmp_params.dt 
         self.Des_traj_ddot=filtfilt(b,a,self.Des_traj_ddot,axis=0) 
 
-        self.n_points=1000 
+        # self.n_points=1000 
         self.Des_traj= interpolate_traj(self.Des_traj,self.n_points)
         self.Des_traj_dot=interpolate_traj(self.Des_traj_dot,self.n_points)
         self.Des_traj_ddot= interpolate_traj(self.Des_traj_ddot,self.n_points)
 
         self.decay= canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt)
+        plt.plot(self.decay)
+        plt.title("decay DMP") 
+        plt.show()
 
     def learn_dmp(self): 
 
@@ -90,6 +93,7 @@ class dmp:
    
         self.currF= data_dmp.T @ H_inv 
         self.currF = self.currF @ H 
+      
     
       
     def simulate_dmp_dynamics(self): 
@@ -107,7 +111,7 @@ class dmp:
      
 
         plt.plot(sim_res, label='DMP') 
-        plt.plot(self.Des_traj,'--', label = 'Learnt')
+        plt.plot(self.Des_traj,'--', label = 'Actual')
         plt.legend()
         plt.title('DMP Learning')
         plt.grid(True)
@@ -147,7 +151,7 @@ def gauss_pdf(x,h_i,c_i):
     
 if __name__ == '__main__': 
 
-    model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_actual.txt" 
+    model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_demo.txt" 
     skill_learner_=dmp(model_file)
     skill_learner_.learn_dmp()
     skill_learner_.simulate_dmp_dynamics()

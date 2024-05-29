@@ -380,6 +380,7 @@ void CartesianImpedanceController::equilibriumPoseCallback_learned(
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
   position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
+  orientation_d_target_.coeffs()<< msg->pose.orientation.w, msg->pose.orientation.x,msg->pose.orientation.y,msg->pose.orientation.z ; 
   std::cout<<"target Pose" << position_d_target_.transpose()<< endl ;
 
 }

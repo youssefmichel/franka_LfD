@@ -16,7 +16,7 @@ from dmp import gauss_pdf, canonical_dynamics, interpolate_traj
 class dmp_params_quat:
     dt: float= 0.001
     n_models: int= 6
-    alpha: float= 2
+    alpha: float= 0.1
     kp: float=0.0001 #spring part affects learning @TODO: Check
     kd: float= 2*1.0* np.sqrt(kp)
     
@@ -33,7 +33,8 @@ class dmp_quat:
             
         elif Des_traj_data is not None:
            
-            self.Des_traj = Des_traj_data  # @TODO Omega
+            self.Des_traj = Des_traj_data[:,:4] 
+            self.Omega = Des_traj_data[:,-3: ]    
         else:
             raise ValueError("Either model_file or Data matrix must be provided !!!")
 
