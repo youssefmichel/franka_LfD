@@ -125,8 +125,12 @@ class skill_learner:
 
 if __name__ == '__main__': 
 
-    model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_demo.txt" 
-    model_file_quat= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_quat_demo.txt" 
+    catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
+    
+    model_file_quat= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
+    model_file = catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
+
+
     skill_learner_=skill_learner(model_file,model_file_quat)
     skill_learner_.learn_skill("DMP")
 

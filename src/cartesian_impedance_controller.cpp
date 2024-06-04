@@ -25,6 +25,9 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   std::vector<double> cartesian_stiffness_vector;
   std::vector<double> cartesian_damping_vector;
   file_counter_=0 ;
+  
+
+
 
 
   
@@ -39,7 +42,11 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   act_pos_lines_.header.frame_id= "panda_link0"  ;
   act_pos_lines_.ns="franka_act_pose_viz" ;
   act_pos_lines_.scale.x=0.003 ;
-   act_pos_lines_.scale.y=0.003 ;
+  act_pos_lines_.scale.y=0.003 ;
+  
+  
+  
+  
 
  
   act_pos_lines_.pose.orientation.w= 1.0 ;
@@ -62,13 +69,15 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
       } 
   else {
 
-      sub_equilibrium_pose_ = node_handle.subscribe(
-      "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
-      ros::TransportHints().reliable().tcpNoDelay());
-
-      //     sub_equilibrium_pose_ = node_handle.subscribe(
-      // "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback_learned, this,
+      // sub_equilibrium_pose_ = node_handle.subscribe(
+      // "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
       // ros::TransportHints().reliable().tcpNoDelay());
+      
+      
+      
+           sub_equilibrium_pose_ = node_handle.subscribe(
+     "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
+      ros::TransportHints().reliable().tcpNoDelay());
 
       
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
@@ -202,11 +211,10 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
   orientation_d_ = Eigen::Quaterniond(initial_transform.rotation());
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.rotation());
+  
 
   // set nullspace equilibrium configuration to initial q
   q_d_nullspace_ = q_initial;
-  // position_d_target_(1)=position_d_(1) +0.4 ;
-  // position_d_target_(2)=position_d_(2) +0.2 ;
 
 }
 
@@ -305,9 +313,11 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
-  orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+ // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+  orientation_d_=orientation_d_target_ ;
 
   visualize_act_pose(position) ;
+    cout<<"des: "<<orientation_d_target_.coeffs().transpose() <<endl ;
 
 
 }
@@ -370,9 +380,10 @@ void CartesianImpedanceController::equilibriumPoseCallback(
   Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
   orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
       msg->pose.orientation.z, msg->pose.orientation.w;
-  if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
-    orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
-  }
+  // if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
+  //   orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
+  // }
+
 }
 
 void CartesianImpedanceController::equilibriumPoseCallback_learned(

@@ -5,6 +5,12 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
+list(APPEND CMAKE_PREFIX_PATH "/opt/ros/noetic" )
+list(APPEND CMAKE_PREFIX_PATH "/home/dhri/Codes/franka_ws/devel" )
+
+
+
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
   dynamic_reconfigure

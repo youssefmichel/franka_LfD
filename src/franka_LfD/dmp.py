@@ -19,6 +19,7 @@ class dmp_params:
     kd: float= 1*np.sqrt(2*kp)
 
 
+
 class dmp: 
     def __init__(self,model_file = None , Des_traj_data= None ): 
         
@@ -36,6 +37,9 @@ class dmp:
         cutoff_freq=9
         self.n_points=len(self.Des_traj)
         self.time_end= self.n_points* self.dmp_params.dt 
+        
+        
+        
 
      
         b, a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
@@ -151,7 +155,10 @@ def gauss_pdf(x,h_i,c_i):
     
 if __name__ == '__main__': 
 
-    model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_demo.txt" 
+    catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
+    
+    model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
+    # model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_demo.txt" 
     skill_learner_=dmp(model_file)
     skill_learner_.learn_dmp()
     skill_learner_.simulate_dmp_dynamics()

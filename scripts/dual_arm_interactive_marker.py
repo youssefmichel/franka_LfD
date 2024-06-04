@@ -38,6 +38,7 @@ def make_sphere(scale=0.3):
     marker.color.g = 0.5
     marker.color.b = 0.5
     marker.color.a = 1.0
+    
     return marker
 
 

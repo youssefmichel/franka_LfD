@@ -35,6 +35,8 @@ class dmp_quat:
            
             self.Des_traj = Des_traj_data[:,:4] 
             self.Omega = Des_traj_data[:,-3: ]    
+            
+        
         else:
             raise ValueError("Either model_file or Data matrix must be provided !!!")
 
@@ -159,8 +161,10 @@ class dmp_quat:
         
 
 if __name__ == '__main__': 
-
-    model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_quat_demo.txt" 
+    catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
+    
+    model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
+    
     skill_learner=dmp_quat(model_file)
     skill_learner.learn_dmp()
     skill_learner.simulate_dmp_dynamics()
