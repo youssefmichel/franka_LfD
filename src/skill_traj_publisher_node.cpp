@@ -28,10 +28,10 @@ int main(int argc, char *argv[])
 
 
   franka_LfD::skill_publisher my_skill_pub  ;
-  my_skill_pub.init(2,nh, robot_hw ) ;
+  my_skill_pub.init(1,nh, robot_hw ) ;
 
   
-  sleep(2) ;
+  sleep(4) ;
   my_skill_pub.publish_des_traj() ;
 
   return -1 ;

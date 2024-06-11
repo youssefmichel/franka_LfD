@@ -26,11 +26,6 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   std::vector<double> cartesian_damping_vector;
   file_counter_=0 ;
   
-
-
-
-
-  
   ROS_INFO("----------------------------Starting custom !!------------------------------") ;
   ros::Duration(1.0).sleep();
   
@@ -38,17 +33,13 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   ros::param::get("/mode", mode) ;
   std::string packPath = ros::package::getPath("franka_LfD");
 
+
+  // Visualization
   marker_pose_pub_ = node_handle.advertise<visualization_msgs::Marker>("visualization_marker",10) ;
   act_pos_lines_.header.frame_id= "panda_link0"  ;
   act_pos_lines_.ns="franka_act_pose_viz" ;
   act_pos_lines_.scale.x=0.003 ;
   act_pos_lines_.scale.y=0.003 ;
-  
-  
-  
-  
-
- 
   act_pos_lines_.pose.orientation.w= 1.0 ;
   act_pos_lines_.id=1 ; 
   act_pos_lines_.type= visualization_msgs::Marker::LINE_STRIP;  
@@ -57,11 +48,12 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
 
 
 
-
+  // Set desired pose
   if(mode== "auto") {
     sub_equilibrium_pose_ = node_handle.subscribe(
       "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback_learned, this,
-      ros::TransportHints().reliable().tcpNoDelay());
+      ros::TransportHints().reliable().tcpNoDelay()); 
+
       ROS_INFO("Current Control Mode: Auto") ; 
       pose_file_= packPath + "/data/rob_pose_actual.txt" ;
       pose_file_quat_= packPath + "/data/rob_pose_quat_actual.txt" ;
@@ -69,24 +61,25 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
       } 
   else {
 
-      // sub_equilibrium_pose_ = node_handle.subscribe(
-      // "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
-      // ros::TransportHints().reliable().tcpNoDelay());
-      
-      
+      //  sub_equilibrium_pose_ = node_handle.subscribe(
+      //  "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
+      //  ros::TransportHints().reliable().tcpNoDelay());
       
            sub_equilibrium_pose_ = node_handle.subscribe(
      "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
       ros::TransportHints().reliable().tcpNoDelay());
 
-      
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
       pose_file_quat_= packPath + "/data/rob_pose_quat_demo.txt" ;
 
       ROS_INFO("Current Control Mode: Tele") ; 
   }
 
-  
+
+ //--------------------------------------------------
+// definition for FrankaModel
+//--------------------------------------------------
+
   std::string arm_id;
   //client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
   
@@ -102,7 +95,6 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
         "aborting controller init!");
     return false;
   }
-
 
   auto* model_interface = robot_hw->get<franka_hw::FrankaModelInterface>();
   if (model_interface == nullptr) {
@@ -171,6 +163,12 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   cartesian_stiffness_.setZero();
   cartesian_damping_.setZero();
 
+
+  string pose_file= packPath + "/data/skill_0.txt" ;
+  general_utility::loadVectorMatrixFromFile(pose_file, 3,  Des_traj_vec_temp_) ;
+  file_counter_des_= 0 ;
+  
+
   return true;
 }
 
@@ -183,12 +181,8 @@ void CartesianImpedanceController::visualize_act_pose(Eigen::Vector3d act_pose) 
   point.y=act_pose(1) ;
   point.z=act_pose(2) ;
    act_pos_lines_.action=visualization_msgs::Marker::ADD ;
-
   act_pos_lines_.points.push_back(point) ;
   marker_pose_pub_.publish(act_pos_lines_) ;
-  
-
-   
 
 
 }
@@ -216,6 +210,8 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
   // set nullspace equilibrium configuration to initial q
   q_d_nullspace_ = q_initial;
 
+
+
 }
 
 void CartesianImpedanceController::update(const ros::Time& /*time*/,
@@ -224,9 +220,25 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
 
 
   franka::RobotState robot_state = state_handle_->getRobotState();
+  int length = Des_traj_vec_temp_.size() ;
+  string mode="tele" ; 
+  ros::param::get("/mode", mode) ;
 
+if(mode=="auto" ){
+  if(file_counter_des_<length-1) {
+    
+    position_d_target_[0] = Des_traj_vec_temp_[file_counter_des_][0]  ;
+    position_d_target_[1] = Des_traj_vec_temp_[file_counter_des_][1]  ;
+    position_d_target_[2] = Des_traj_vec_temp_[file_counter_des_][2]  ;
 
-  
+    file_counter_des_ ++ ;
+
+  }
+  }
+
+  position_d_=position_d_target_ ;
+  orientation_d_=orientation_d_target_ ;
+
   std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
   std::array<double, 42> jacobian_array =
       model_handle_->getZeroJacobian(franka::Frame::kEndEffector);
@@ -287,6 +299,9 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
   pose_vector_[file_counter_].push_back(position[0]) ;
   pose_vector_[file_counter_].push_back(position[1]) ;
   pose_vector_[file_counter_].push_back(position[2]) ;
+  pose_vector_[file_counter_].push_back(position_d_[0]) ;
+  pose_vector_[file_counter_].push_back(position_d_[1]) ;
+  pose_vector_[file_counter_].push_back(position_d_[2]) ;
 
   pose_quat_vector_.push_back(std::vector<float>()) ;
   pose_quat_vector_[file_counter_].push_back(orientation.w()) ;
@@ -312,12 +327,13 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
       filter_params_ * nullspace_stiffness_target_ + (1.0 - filter_params_) * nullspace_stiffness_;
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
-  position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
+  //position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
+
  // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
-  orientation_d_=orientation_d_target_ ;
+
 
   visualize_act_pose(position) ;
-    cout<<"des: "<<orientation_d_target_.coeffs().transpose() <<endl ;
+  cout<<"des orientation: "<<orientation_d_target_.coeffs().transpose() <<endl ;
 
 
 }
@@ -377,12 +393,14 @@ void CartesianImpedanceController::equilibriumPoseCallback(
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
   position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
-  Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
-  orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
-      msg->pose.orientation.z, msg->pose.orientation.w;
-  // if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
-  //   orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
-  // }
+  // Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
+
+  // orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
+  //     msg->pose.orientation.z, msg->pose.orientation.w;
+
+  //  if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
+  //    orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
+  //  }
 
 }
 
@@ -390,9 +408,11 @@ void CartesianImpedanceController::equilibriumPoseCallback_learned(
     const geometry_msgs::PoseStampedConstPtr& msg) {
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
-  position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
-  orientation_d_target_.coeffs()<< msg->pose.orientation.w, msg->pose.orientation.x,msg->pose.orientation.y,msg->pose.orientation.z ; 
-  std::cout<<"target Pose" << position_d_target_.transpose()<< endl ;
+ 
+ //position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
+  
+  //orientation_d_target_.coeffs()<< msg->pose.orientation.w, msg->pose.orientation.x,msg->pose.orientation.y,msg->pose.orientation.z ; 
+  
 
 }
 

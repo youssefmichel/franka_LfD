@@ -44,6 +44,8 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
   std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
   std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
   std::vector<hardware_interface::JointHandle> joint_handles_;
+  std::vector<std::vector<float>> Des_traj_vec_temp_ ; 
+  int file_counter_des_ ;
 
   double filter_params_{0.005};
   double nullspace_stiffness_{20.0};

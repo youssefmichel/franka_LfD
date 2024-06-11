@@ -28,8 +28,8 @@ class dmp_quat:
         if model_file is not None:
             
             temp=np.genfromtxt(model_file) 
-            self.Des_traj= temp[3000:7000,:4] 
-            self.Omega= temp[3000:7000, -3:] 
+            self.Des_traj= temp[:,:4] 
+            self.Omega= temp[:, -3:] 
             
         elif Des_traj_data is not None:
            

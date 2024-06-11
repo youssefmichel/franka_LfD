@@ -6,7 +6,7 @@ namespace franka_LfD {
     
     void skill_publisher::init(int n_skills,ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw) {
 
-        ROS_INFO("Skill publisher node !!") ;
+        ROS_INFO("Skill Publisher Node !!") ;
         n_skills_=n_skills ;
         string packPath = ros::package::getPath("franka_LfD"); 
         int n_DOF =3  ;
@@ -18,14 +18,8 @@ namespace franka_LfD {
 
         }
 
-        
-
         points_.header.frame_id ="panda_link0" ;
         //points_.header.frame_id =link_name ;
-
-
-    
-
         std::string arm_id;
      //client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
   
@@ -54,6 +48,8 @@ namespace franka_LfD {
             Des_traj_quat_list_.push_back(temp_vec_quat) ;
 
         }
+
+        sleep(2.0) ;
 
 
     }
@@ -130,13 +126,14 @@ namespace franka_LfD {
                 //std::cout<<"Publishing: "<< des_pose_msg_.pose.position.x << " y: "<< des_pose_msg_.pose.position.y <<endl ;
                 des_traj_pub_.publish(des_pose_msg_) ;
                 if(t_elap>1) {
-                visualize_des_pose() ;
+              //  visualize_des_pose() ;
                 t_elap=0 ;
                 }
               
             
                 file_counter ++ ;
                 loop_rate.sleep() ; 
+               
                 ros::spinOnce() ;
                 t_elap +=0.01 ;
              

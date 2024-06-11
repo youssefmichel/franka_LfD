@@ -15,7 +15,7 @@ class dmp_params:
     dt: float= 0.001 
     n_models: int= 6
     alpha: float= 0.1
-    kp: float=50 
+    kp: float=10 
     kd: float= 1*np.sqrt(2*kp)
 
 
@@ -105,8 +105,13 @@ class dmp:
         x= self.Des_traj[0,:]
         x_dot=x*0 
         sim_traj=[]
-        for i in range(self.n_points): 
-            ref_acc= self.dmp_params.kp* (self.goal - x ) - self.dmp_params.kd * x_dot + self.currF[:,i] *self.decay[i]
+        for i in range(self.n_points+900):
+
+            if(i<self.n_points-2):
+               ref_acc= self.dmp_params.kp* (self.goal - x ) - self.dmp_params.kd * x_dot + self.currF[:,i] *self.decay[i]
+            else: 
+               ref_acc= self.dmp_params.kp* (self.goal - x ) - self.dmp_params.kd * x_dot 
+
             x_dot=x_dot + self.dmp_params.dt* ref_acc 
             x = x + self.dmp_params.dt * x_dot 
             sim_traj.append(x) 

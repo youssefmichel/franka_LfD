@@ -37,12 +37,12 @@ class lwr:
         self.Des_traj[:,1]=filtfilt(self.b,self.a,self.Des_traj[:,1])
 
     
-        self.dt=0.005 
+        self.dt=0.001 
         
 
         self.Time_tot= self.N_points  *self.dt
         self.Time= np.linspace(0,self.Time_tot,self.N_points) 
-        self.N_models= 8
+        self.N_models= 10
         self.centers=np.linspace(0,self.Time_tot,self.N_models)
 
         
@@ -84,10 +84,10 @@ class lwr:
                 sum= sum + self.W_k[i] @ self.X @ self.A_k[i]
         
      
-         file_path = "/home/dhrikarl/Codes/ros_tutorials_ws/src/turtle_control/data/demo_learnt.txt" 
-         with open(file_path, "w") as file:
-              for row in sum:
-                    file.write(" ".join(map(str, row)) + "\n")
+        #  file_path = "/home/dhrikarl/Codes/ros_tutorials_ws/src/turtle_control/data/demo_learnt.txt" 
+        #  with open(file_path, "w") as file:
+        #       for row in sum:
+        #             file.write(" ".join(map(str, row)) + "\n")
 
 
               
@@ -139,10 +139,7 @@ if __name__ == '__main__':
     MyDmPLearner.learn_lwr()
     Learnt_traj= MyDmPLearner.regression()  
     # MyDmPLearner.command_trajectory(Learnt_traj )
-    
-
-   
-    
+ 
 
     plt.plot(Learnt_traj)
     plt.plot(Des_traj, '--')

@@ -51,6 +51,7 @@ namespace franka_LfD {
             Vec ref_pos  = rob_pos_init_ + dt*scale*joystick_inp_ ; // we treate joystick input as a ref. vel 
             Vec quat_des = omega2quat(joystick_inp_rot_,rob_quat_init_) ;
          
+         
             // rob_quat_des_ = omega2quat(joystick_inp_rot_,rob_quat_des_) ;
             // quat_des =rob_quat_des_  ;
     
@@ -79,14 +80,15 @@ namespace franka_LfD {
 
     Vec joystick_reader::omega2quat(Vec omega, Vec q) {
 
-        Vec eta= 2* omega * 0.0005 ;
+        Vec eta= 2* omega * 0.01 ;
         double eta_arr[] = {omega(0),omega(1),omega(2) } ;
         double q_arr[] =  {q[0], q[1] ,q[2] , q[3] } ;
         double q_temp[4]  ;
         double q_temp2[4] ;
 
-        quat_utils::quat_exp(eta_arr,q_temp2) ;
+        quat_utils::quat_exp(eta_arr,q_temp) ;
         quat_utils::quat_mult(q_temp, q_arr,q_temp2) ;
+        
         
         Vec q_out = Vec::Zero(4) ;
         q_out(0) = q_temp2[0] ;
