@@ -14,7 +14,7 @@ from dataclasses import dataclass
 class dmp_params:
     dt: float= 0.001 
     n_models: int= 6
-    alpha: float= 0.1
+    alpha: float= 1
     kp: float=10 
     kd: float= 1*np.sqrt(2*kp)
 

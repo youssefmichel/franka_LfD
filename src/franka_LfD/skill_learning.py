@@ -36,7 +36,7 @@ class skill_learner:
         plt.show()
 
         self.Des_traj_dot_norm=np.abs(np.mean(self.Des_traj_dot,axis=1) )
-        self.vel_thresh=0.006
+        self.vel_thresh=0.01
         self.n_segments=1 
 
         plt.plot(self.Des_traj)
@@ -70,7 +70,6 @@ class skill_learner:
                
     
         self.traj_segments=[]
-
         self.traj_segments_quat= [] 
 
         for i in range (len(self.indices_start)) : 

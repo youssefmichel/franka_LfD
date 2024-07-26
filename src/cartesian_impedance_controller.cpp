@@ -61,13 +61,13 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
       } 
   else {
 
-      //  sub_equilibrium_pose_ = node_handle.subscribe(
-      //  "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
-      //  ros::TransportHints().reliable().tcpNoDelay());
+       sub_equilibrium_pose_ = node_handle.subscribe(
+       "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
+       ros::TransportHints().reliable().tcpNoDelay());
       
-           sub_equilibrium_pose_ = node_handle.subscribe(
-     "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
-      ros::TransportHints().reliable().tcpNoDelay());
+    //        sub_equilibrium_pose_ = node_handle.subscribe(
+    //  "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
+    //   ros::TransportHints().reliable().tcpNoDelay());
 
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
       pose_file_quat_= packPath + "/data/rob_pose_quat_demo.txt" ;
@@ -76,10 +76,8 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   }
 
 
- //--------------------------------------------------
-// definition for FrankaModel
-//--------------------------------------------------
 
+// definition for FrankaModel
   std::string arm_id;
   //client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
   
@@ -205,7 +203,7 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
   orientation_d_ = Eigen::Quaterniond(initial_transform.rotation());
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.rotation());
-  
+  orientation_d_target_ .coeffs()<<  -0.081 , 0.995 , 0.056 , 0.023 ;
 
   // set nullspace equilibrium configuration to initial q
   q_d_nullspace_ = q_initial;
@@ -227,17 +225,14 @@ void CartesianImpedanceController::update(const ros::Time& /*time*/,
 if(mode=="auto" ){
   if(file_counter_des_<length-1) {
     
-    position_d_target_[0] = Des_traj_vec_temp_[file_counter_des_][0]  ;
-    position_d_target_[1] = Des_traj_vec_temp_[file_counter_des_][1]  ;
-    position_d_target_[2] = Des_traj_vec_temp_[file_counter_des_][2]  ;
-
-    file_counter_des_ ++ ;
+    // position_d_target_[0] = Des_traj_vec_temp_[file_counter_des_][0]  ;
+    // position_d_target_[1] = Des_traj_vec_temp_[file_counter_des_][1]  ;
+    // position_d_target_[2] = Des_traj_vec_temp_[file_counter_des_][2]  ;
+    // file_counter_des_ ++ ;
 
   }
   }
 
-  position_d_=position_d_target_ ;
-  orientation_d_=orientation_d_target_ ;
 
   std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
   std::array<double, 42> jacobian_array =
@@ -286,9 +281,10 @@ if(mode=="auto" ){
                     jacobian.transpose() * jacobian_transpose_pinv) *
                        (nullspace_stiffness_ * (q_d_nullspace_ - q) -
                         (2.0 * sqrt(nullspace_stiffness_)) * dq);
+
   // Desired torque
-    
   tau_d << tau_task + tau_nullspace + coriolis;
+
   // Saturate torque rate to avoid discontinuities
   tau_d << saturateTorqueRate(tau_d, tau_J_d);
   for (size_t i = 0; i < 7; ++i) {
@@ -313,9 +309,8 @@ if(mode=="auto" ){
   pose_quat_vector_[file_counter_].push_back(velocity[3]) ;
   pose_quat_vector_[file_counter_].push_back(velocity[4]) ;
   pose_quat_vector_[file_counter_].push_back(velocity[5]) ;
-  
-
   file_counter_++ ;
+
 
   // update parameters changed online either through dynamic reconfigure or through the interactive
   // target by filtering
@@ -325,15 +320,26 @@ if(mode=="auto" ){
       filter_params_ * cartesian_damping_target_ + (1.0 - filter_params_) * cartesian_damping_;
   nullspace_stiffness_ =
       filter_params_ * nullspace_stiffness_target_ + (1.0 - filter_params_) * nullspace_stiffness_;
+
+   cartesian_stiffness_ =cartesian_stiffness_target_ ;
+   cartesian_damping_ = cartesian_damping_target_ ;
+   nullspace_stiffness_ = nullspace_stiffness_target_ ;
+
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
-  //position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
 
- // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+ position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
+ position_d_=position_d_target_ ;
+
+ orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+ //orientation_d_=orientation_d_target_ ;
+ cout<<"Desired Orientation: " <<orientation_d_.coeffs().transpose()<<endl ;
+ cout<<"Act Orientation: " <<orientation.coeffs().transpose()<<endl ;
 
 
-  visualize_act_pose(position) ;
-  cout<<"des orientation: "<<orientation_d_target_.coeffs().transpose() <<endl ;
+
+  //visualize_act_pose(position) ;
+  
 
 
 }
@@ -376,16 +382,18 @@ void CartesianImpedanceController::complianceParamCallback(
     uint32_t /*level*/) {
   cartesian_stiffness_target_.setIdentity();
   cartesian_stiffness_target_.topLeftCorner(3, 3)
-      << config.translational_stiffness * Eigen::Matrix3d::Identity();
+      << 2000 * Eigen::Matrix3d::Identity();
+      
   cartesian_stiffness_target_.bottomRightCorner(3, 3)
-      << config.rotational_stiffness * Eigen::Matrix3d::Identity();
+      << 150 * Eigen::Matrix3d::Identity();
   cartesian_damping_target_.setIdentity();
-  // Damping ratio = 1
+ 
   cartesian_damping_target_.topLeftCorner(3, 3)
       << 2.0 * sqrt(config.translational_stiffness) * Eigen::Matrix3d::Identity();
   cartesian_damping_target_.bottomRightCorner(3, 3)
       << 2.0 * sqrt(config.rotational_stiffness) * Eigen::Matrix3d::Identity();
   nullspace_stiffness_target_ = config.nullspace_stiffness;
+ 
 }
 
 void CartesianImpedanceController::equilibriumPoseCallback(
@@ -393,26 +401,35 @@ void CartesianImpedanceController::equilibriumPoseCallback(
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
   position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
-  // Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
+  Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
 
-  // orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
-  //     msg->pose.orientation.z, msg->pose.orientation.w;
+  orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
+      msg->pose.orientation.z, msg->pose.orientation.w;
 
-  //  if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
-  //    orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
-  //  }
+   if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
+     orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
+   }
+
+  
 
 }
 
 void CartesianImpedanceController::equilibriumPoseCallback_learned(
     const geometry_msgs::PoseStampedConstPtr& msg) {
+
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
  
- //position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
+  Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
+ position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
+
+//  orientation_d_target_.coeffs()<< msg->pose.orientation.w, msg->pose.orientation.x,msg->pose.orientation.y,msg->pose.orientation.z ; 
   
-  //orientation_d_target_.coeffs()<< msg->pose.orientation.w, msg->pose.orientation.x,msg->pose.orientation.y,msg->pose.orientation.z ; 
-  
+//     if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
+//      orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
+//    }
+
+//     orientation_d_target_.coeffs() <<0,0,0,1 ;
 
 }
 

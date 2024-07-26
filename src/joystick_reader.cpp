@@ -72,8 +72,7 @@ namespace franka_LfD {
             loop_rate.sleep() ;
             ros::spinOnce() ;
             
-           
-
+        
         }
 
     }
@@ -89,7 +88,7 @@ namespace franka_LfD {
         quat_utils::quat_exp(eta_arr,q_temp) ;
         quat_utils::quat_mult(q_temp, q_arr,q_temp2) ;
         
-        
+    
         Vec q_out = Vec::Zero(4) ;
         q_out(0) = q_temp2[0] ;
         q_out(1) = q_temp2[1] ;

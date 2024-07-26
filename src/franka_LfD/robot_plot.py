@@ -43,7 +43,7 @@ if __name__ == '__main__':
     Des_traj_tot = np.concatenate(Des_traj, axis=0)
     Des_traj_tot_quat = np.concatenate(Des_traj_quat, axis=0)
 
-    plt.plot(Des_traj_tot[:,:3])
+    plt.plot(act_pose[4700:,:3])
    
     plt.plot(Des_traj_tot[:,-3:],'--')
    
@@ -55,6 +55,8 @@ if __name__ == '__main__':
 
     plt.plot(Des_traj_tot_quat[:,:4], '--')
     plt.plot(act_pose_quat[:,:4])
+
+    print(Des_traj_tot_quat [-1 ,:4])
     plt.title("Executed act vs learnt (Quat)")
     plt.show()
 
