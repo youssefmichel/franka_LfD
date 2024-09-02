@@ -1,6 +1,4 @@
 """
-
-
 Plotting of the executed robot motions
 
 Author: Youssef Michel
