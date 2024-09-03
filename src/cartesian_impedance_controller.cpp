@@ -163,8 +163,6 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   general_utility::loadVectorMatrixFromFile(pose_file, 3,  Des_traj_vec_temp_) ;
   file_counter_des_= 0 ;
   
-
-
   return true;
 }
 
@@ -204,25 +202,16 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
   //orientation_d_target_.coeffs()<<0.354 ,0.935 ,-0.000, 0.001 ;
 
   Eigen::Map<Eigen::Matrix<double, 6, 7>> J(jacobian_array.data());
-  franka_LfD::NullSpaceController null_space_controller ;
-  
-  
-  // realtype manip = null_space_controller.computeManipIndex( initial_state)  ;
 
-  // cout <<"Manip Index: "<<manip <<endl ;
+  franka_LfD::NullSpaceController null_space_controller =  NullSpaceController(model_handle_);
+  null_space_controller.findOptimalConfig(model_handle_ ,initial_state ) ;
 
   
-  // const franka_hw::ModelBase* model ; 
-  // std::array<double, 42> jacobian_array2 = model->zeroJacobian(franka::Frame::kEndEffector, initial_state ) ;
-
-  // Eigen::Map<Eigen::Matrix<double, 6, 7>> J2(jacobian_array2.data()); 
-
-  //  cout<<"Manip Index: " << J2<<endl ; 
-
-
-
+  //null_space_controller.init(model_handle_) ;
+  
   // set nullspace equilibrium configuration to initial q
   q_d_nullspace_ = q_initial;
+  
 
 
 

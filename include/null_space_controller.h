@@ -24,28 +24,19 @@
 
 namespace franka_LfD { 
 
-class NullSpaceController : public controller_interface::MultiInterfaceController<
-                                                franka_hw::FrankaModelInterface,
-                                                hardware_interface::EffortJointInterface,
-                                                franka_hw::FrankaStateInterface> {
+class NullSpaceController  {
 
 
 
 public: 
 
-bool init(hardware_interface::RobotHW* robot_hw,
-                                               ros::NodeHandle& node_handle) override ; 
 
                                                
-void update(const ros::Time&, const ros::Duration& period) override;
-void stopping(const ros::Time&) override;
-
-
-realtype computeManipIndex(const Vec &q, const Mat &J) ;
+realtype computeManipIndex( const Mat &J) ;
 realtype computeManipIndex ( const franka::RobotState &state  ) ;
 
-Vec findOptimalConfig(const Vec &q, const Mat &J) ;
-
+Vec findOptimalConfig(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state)  ;
+NullSpaceController( std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle)  ;
 
 private: 
 
