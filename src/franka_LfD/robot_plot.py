@@ -41,15 +41,17 @@ if __name__ == '__main__':
     Des_traj_tot = np.concatenate(Des_traj, axis=0)
     Des_traj_tot_quat = np.concatenate(Des_traj_quat, axis=0)
 
-    plt.plot(act_pose[4700:,:3])
+    plt.plot(act_pose[690:,:3])
    
     plt.plot(Des_traj_tot[:,-3:],'--')
+
+    plt.plot(act_pose[690:,-3:],'--')
    
     plt.title("Executed act vs learnt (Pos)")
     plt.show()
 
     print(Des_traj_tot_quat[1,:4])
-    print(act_pose_quat[1,:4])
+    print("last element actual quat", act_pose_quat[1,:4])
 
     plt.plot(Des_traj_tot_quat[:,:4], '--')
     plt.plot(act_pose_quat[:,:4])

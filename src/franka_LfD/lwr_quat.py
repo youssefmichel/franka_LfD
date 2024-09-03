@@ -85,7 +85,8 @@ class lwr_quat(lwr):
             sim_traj.append(quat_curr_vec) 
                  #project using exp. map in UQ 
          
-     
+         plt.plot(sim_traj)
+         
          return sim_traj
 
 

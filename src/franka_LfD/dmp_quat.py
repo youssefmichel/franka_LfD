@@ -16,8 +16,8 @@ from dmp import gauss_pdf, canonical_dynamics, interpolate_traj
 class dmp_params_quat:
     dt: float= 0.001
     n_models: int= 6
-    alpha: float= 0.1
-    kp: float=0.0001 #spring part affects learning @TODO: Check
+    alpha: float= 1
+    kp: float=30.0001 #spring part affects learning @TODO: Check
     kd: float= 2*1.0* np.sqrt(kp)
     
 
@@ -61,6 +61,7 @@ class dmp_quat:
         self.Omega_dot=filtfilt(b,a,self.Omega_dot,axis=0) 
 
         self.quat_goal=Quaternion(self.Des_traj[self.n_points-1,:4]) 
+        print(self.quat_goal)
        
         self.decay=canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt) 
      

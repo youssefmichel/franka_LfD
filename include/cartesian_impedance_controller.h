@@ -21,7 +21,9 @@
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/franka_state_interface.h>
 #include <utility.h> 
- #include "franka_LfD/learn_traj.h"
+#include "franka_LfD/learn_traj.h"
+#include  "null_space_controller.h"
+
 
 namespace franka_LfD {
 

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   my_skill_pub.init(1,nh, robot_hw ) ;
 
   
-  sleep(4) ;
+  sleep(2) ;
   my_skill_pub.publish_des_traj() ;
 
   return -1 ;

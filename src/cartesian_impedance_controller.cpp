@@ -65,9 +65,6 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
        "equilibrium_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
        ros::TransportHints().reliable().tcpNoDelay());
       
-    //        sub_equilibrium_pose_ = node_handle.subscribe(
-    //  "/franka/des_pose", 20, &CartesianImpedanceController::equilibriumPoseCallback, this,
-    //   ros::TransportHints().reliable().tcpNoDelay());
 
       pose_file_= packPath + "/data/rob_pose_demo.txt" ;
       pose_file_quat_= packPath + "/data/rob_pose_quat_demo.txt" ;
@@ -167,6 +164,7 @@ bool CartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   file_counter_des_= 0 ;
   
 
+
   return true;
 }
 
@@ -178,7 +176,7 @@ void CartesianImpedanceController::visualize_act_pose(Eigen::Vector3d act_pose) 
   point.x=act_pose(0) ;
   point.y=act_pose(1) ;
   point.z=act_pose(2) ;
-   act_pos_lines_.action=visualization_msgs::Marker::ADD ;
+  act_pos_lines_.action=visualization_msgs::Marker::ADD ;
   act_pos_lines_.points.push_back(point) ;
   marker_pose_pub_.publish(act_pos_lines_) ;
 
@@ -203,7 +201,25 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
   orientation_d_ = Eigen::Quaterniond(initial_transform.rotation());
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.rotation());
-  orientation_d_target_ .coeffs()<<  -0.081 , 0.995 , 0.056 , 0.023 ;
+  //orientation_d_target_.coeffs()<<0.354 ,0.935 ,-0.000, 0.001 ;
+
+  Eigen::Map<Eigen::Matrix<double, 6, 7>> J(jacobian_array.data());
+  franka_LfD::NullSpaceController null_space_controller ;
+  
+  
+  // realtype manip = null_space_controller.computeManipIndex( initial_state)  ;
+
+  // cout <<"Manip Index: "<<manip <<endl ;
+
+  
+  // const franka_hw::ModelBase* model ; 
+  // std::array<double, 42> jacobian_array2 = model->zeroJacobian(franka::Frame::kEndEffector, initial_state ) ;
+
+  // Eigen::Map<Eigen::Matrix<double, 6, 7>> J2(jacobian_array2.data()); 
+
+  //  cout<<"Manip Index: " << J2<<endl ; 
+
+
 
   // set nullspace equilibrium configuration to initial q
   q_d_nullspace_ = q_initial;
@@ -333,8 +349,8 @@ if(mode=="auto" ){
 
  orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
  //orientation_d_=orientation_d_target_ ;
- cout<<"Desired Orientation: " <<orientation_d_.coeffs().transpose()<<endl ;
- cout<<"Act Orientation: " <<orientation.coeffs().transpose()<<endl ;
+//  cout<<"Desired Orientation: " <<orientation_d_.coeffs().transpose()<<endl ;
+//  cout<<"Act Orientation: " <<orientation.coeffs().transpose()<<endl ;
 
 
 
@@ -421,7 +437,7 @@ void CartesianImpedanceController::equilibriumPoseCallback_learned(
       position_and_orientation_d_target_mutex_);
  
   Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
- position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
+  position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
 
 //  orientation_d_target_.coeffs()<< msg->pose.orientation.w, msg->pose.orientation.x,msg->pose.orientation.y,msg->pose.orientation.z ; 
   

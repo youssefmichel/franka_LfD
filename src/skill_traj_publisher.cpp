@@ -21,14 +21,23 @@ namespace franka_LfD {
         points_.header.frame_id ="panda_link0" ;
         //points_.header.frame_id =link_name ;
         std::string arm_id;
-     //client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
+     // client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
   
         if (!nh.getParam("arm_id", arm_id)) {
         ROS_ERROR_STREAM("CartesianImpedanceController: Could not read parameter arm_id");
         }
         
-        // auto* state_interface = robot_hw->get<franka_hw::FrankaStateInterface>();
+
+
+        // const franka_hw::ModelBase* model_;
+
+        // franka::RobotState state ; 
+        // model_->zeroJacobian(franka::Frame::kEndEffector,state.q, state.F_T_EE , state.EE_T_K  ) ;
+    
+
         // cout <<"Initial Robot state 1"<<endl ;
+        // auto* state_interface = robot_hw->get<franka_hw::FrankaStateInterface>();
+        
         // state_handle_ = std::make_unique<franka_hw::FrankaStateHandle>(
         // state_interface->getHandle(arm_id + "_robot")); 
 
@@ -49,7 +58,7 @@ namespace franka_LfD {
 
         }
 
-        sleep(2.0) ;
+        sleep(0.1) ;
 
 
     }
@@ -76,8 +85,6 @@ namespace franka_LfD {
         points_.pose.orientation.w = 1.0;
         
         pose_visualizer_pub_ .publish(points_);
-
-
 
 
      }
@@ -111,7 +118,7 @@ namespace franka_LfD {
             int dim_traj= curr_traj.size() ;
             realtype t_elap= 0 ;
             
-            while(ros::ok() && file_counter < dim_traj-2) {
+            while(ros::ok() && file_counter < dim_traj-1) {
 
     
                 des_pose_msg_.pose.position.x=curr_traj[file_counter][0]  ;
@@ -126,7 +133,7 @@ namespace franka_LfD {
                 //std::cout<<"Publishing: "<< des_pose_msg_.pose.position.x << " y: "<< des_pose_msg_.pose.position.y <<endl ;
                 des_traj_pub_.publish(des_pose_msg_) ;
                 if(t_elap>1) {
-              //  visualize_des_pose() ;
+                visualize_des_pose() ;
                 t_elap=0 ;
                 }
               

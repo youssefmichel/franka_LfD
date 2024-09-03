@@ -91,6 +91,7 @@ add_library(${PROJECT_NAME}
   src/utility.cpp
   src/skill_traj_publisher.cpp
   src/joystick_reader.cpp
+  src/null_space_controller.cpp 
 
 )
 
