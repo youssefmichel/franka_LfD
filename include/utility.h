@@ -24,7 +24,16 @@ namespace general_utility{
 
     int loadVectorMatrixFromFile (std::string fileName, int cols, vector<vector<float>> &outMat) ; 
     void saveVectorMatrixToFile (string fileName, vector < vector <float> > outMat) ;
-
+    template <typename T> int sign(T value) {
+                            
+    if (value > 0) {
+        return 1;   // Positive number
+    } else if (value < 0) {
+        return -1;  // Negative number
+    } else {
+        return 0;   // Zero
+    }
+}
 }
 
 namespace quat_utils{ 

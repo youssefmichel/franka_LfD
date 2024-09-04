@@ -30,19 +30,28 @@ class NullSpaceController  {
 
 public: 
 
-
                                                
-realtype computeManipIndex( const Mat &J) ;
-realtype computeManipIndex ( const franka::RobotState &state  ) ;
-
+float computeManipIndex( const Mat &J) ;
 Vec findOptimalConfig(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state)  ;
 NullSpaceController( std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle)  ;
+NullSpaceController() ;
+
 
 private: 
 
-std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
-realtype manip_index_prev_ ;
+enum gradDirection {
+
+    RIGHT=-1, 
+    LEFT=1
+
+} ;
+
+gradDirection curr_grad_direc_ ;
+float manip_index_prev_ ;
 Vec q_prev_ ;
+franka::RobotState findDirection(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle,  franka::RobotState rob_state)  ;
+Mat GetJacobianEigen(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state) ;
+bool Initial_point_optimal_flag_  ; 
 
 
 

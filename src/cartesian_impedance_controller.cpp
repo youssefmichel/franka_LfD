@@ -203,10 +203,8 @@ void CartesianImpedanceController::starting(const ros::Time& /*time*/) {
 
   Eigen::Map<Eigen::Matrix<double, 6, 7>> J(jacobian_array.data());
 
-  franka_LfD::NullSpaceController null_space_controller =  NullSpaceController(model_handle_);
-  null_space_controller.findOptimalConfig(model_handle_ ,initial_state ) ;
-
-  
+  null_space_controller_ =  NullSpaceController(model_handle_);
+    
   //null_space_controller.init(model_handle_) ;
   
   // set nullspace equilibrium configuration to initial q
@@ -277,6 +275,8 @@ if(mode=="auto" ){
   // kinematic pseuoinverse
   Eigen::MatrixXd jacobian_transpose_pinv;
   pseudoInverse(jacobian.transpose(), jacobian_transpose_pinv);
+  q_d_nullspace_=  null_space_controller_.findOptimalConfig(model_handle_ ,robot_state ) ; 
+
 
   // Cartesian PD control with damping ratio = 1
   tau_task << jacobian.transpose() *
@@ -398,6 +398,7 @@ void CartesianImpedanceController::complianceParamCallback(
   cartesian_damping_target_.bottomRightCorner(3, 3)
       << 2.0 * sqrt(config.rotational_stiffness) * Eigen::Matrix3d::Identity();
   nullspace_stiffness_target_ = config.nullspace_stiffness;
+  nullspace_stiffness_target_=15 ;
  
 }
 
@@ -414,9 +415,6 @@ void CartesianImpedanceController::equilibriumPoseCallback(
    if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
      orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
    }
-
-  
-
 }
 
 void CartesianImpedanceController::equilibriumPoseCallback_learned(

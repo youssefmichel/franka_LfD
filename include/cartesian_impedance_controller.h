@@ -63,6 +63,7 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
   std::mutex position_and_orientation_d_target_mutex_;
   Eigen::Vector3d position_d_target_;
   Eigen::Quaterniond orientation_d_target_;
+  franka_LfD::NullSpaceController null_space_controller_ ;
 
   ros::Publisher marker_pose_pub_ ;
   visualization_msgs::Marker act_pos_lines_ ;
