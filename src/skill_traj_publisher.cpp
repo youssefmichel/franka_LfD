@@ -28,7 +28,6 @@ namespace franka_LfD {
         }
         
 
-
         // const franka_hw::ModelBase* model_;
 
         // franka::RobotState state ; 

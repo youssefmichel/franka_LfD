@@ -92,6 +92,7 @@ add_library(${PROJECT_NAME}
   src/skill_traj_publisher.cpp
   src/joystick_reader.cpp
   src/null_space_controller.cpp 
+  src/gripper_controller.cpp
 
 )
 
@@ -128,6 +129,11 @@ add_executable(skill_traj_publisher_node
  src/joystick_reader_node.cpp
 )
 
+add_executable(gripper_controller_node
+ src/gripper_controller_node.cpp
+)
+
+
 
 
  target_include_directories(skill_traj_publisher_node PUBLIC
@@ -151,6 +157,18 @@ target_link_libraries(joystick_reader_node PUBLIC
  ${PROJECT_NAME}
  
 )
+
+target_include_directories(gripper_controller_node PUBLIC
+${catkin_INCLUDE_DIRS}
+include
+)
+target_link_libraries(gripper_controller_node PUBLIC
+${Franka_LIBRARIES}
+${catkin_LIBRARIES}
+${PROJECT_NAME}
+
+)
+
 
  target_include_directories(test_serv PUBLIC
   ${catkin_INCLUDE_DIRS}

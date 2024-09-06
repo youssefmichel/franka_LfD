@@ -20,31 +20,55 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-
-
+#include <utility.h>
+#include <ros/package.h>
 using franka_gripper::GraspAction;
 using franka_gripper::HomingAction;
 using franka_gripper::MoveAction;
 using franka_gripper::StopAction;
+
 using GraspClient = actionlib::SimpleActionClient<GraspAction>;
 using HomingClient = actionlib::SimpleActionClient<HomingAction>;
 using MoveClient = actionlib::SimpleActionClient<MoveAction>;
 using StopClient = actionlib::SimpleActionClient<StopAction>;
+# define MAX_GRIPPER_WIDTH 0.07 
+# define MIN_GRIPPER_WIDTH 0.03
+
 
 namespace franka_LfD{
 
     class GripperControllerBase {
 
         protected: 
-            GraspClient MyGraspClient_ ;
+            
             bool SubscriberCallback(const sensor_msgs::JointState& msg) ;  
-
+            
+            bool homingGripper() ;
+            bool GraspObject() ;
+            bool GripperAction(realtype ref_width, realtype ref_force) ; 
+            bool ReleaseObject() ;
+            bool StopGrasp() ;
+            double commanded_width_ ;
+            double commanded_force_ ;
+            
+            
 
         public: 
       
-            bool init(const std::shared_ptr<ros::NodeHandle>& pnh) ;
+            bool init() ;
+            void gripperTestRun() ;
 
-        
 
     } ;
+
+    class GripperControllerTrajectory:public GripperControllerBase {
+
+        private:
+            std::vector<std::vector<float> > ref_trajectory_ ;
+        public :
+            bool init(std::string trajectory_file) ;
+            void followReferenceTrajectory() ;
+    } ;
+
+    
 }
