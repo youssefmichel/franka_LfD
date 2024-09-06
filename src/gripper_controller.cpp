@@ -134,6 +134,8 @@ namespace franka_LfD{
 
                 flag_close_gripper_  = false ;
                 flag_open_gripper_   = false ;
+                commanded_width_  = MAX_GRIPPER_WIDTH ;
+                commanded_force_  = 0.0 ;
                 return true ;
     }
 
@@ -155,6 +157,7 @@ namespace franka_LfD{
     void GripperControllerButton::updateGripper() {
 
         ros::Rate loop_rate(1000) ;
+        int file_counter(0) ;
 
         while (ros::ok()) {
 
@@ -171,9 +174,17 @@ namespace franka_LfD{
                 }
 
             loop_rate.sleep() ;
+            gripper_state_vector_.push_back(std::vector<float>()) ;
+            gripper_state_vector_[file_counter].push_back(commanded_width_) ;
+            gripper_state_vector_[file_counter].push_back(commanded_force_) ;
+            file_counter ++ ;
             ros::spinOnce() ;
 
         }
+
+        string pack_path= ros::package::getPath("franka_LfD") ;
+        string file_name= pack_path + "/data/gripper_state_demo.txt" ;
+        general_utility::saveVectorMatrixToFile(file_name,gripper_state_vector_) ;
 
     }
 
@@ -181,7 +192,14 @@ namespace franka_LfD{
             
             ROS_INFO("Following Reference Gripper Trajectory Node !!") ;
             string packPath = ros::package::getPath("franka_LfD"); 
-            general_utility::loadVectorMatrixFromFile(trajectory_file, 2,  ref_trajectory_) ;
+           if (general_utility::loadVectorMatrixFromFile(trajectory_file, 2,  ref_trajectory_) ==0 ) {
+            return true ;
+           }
+           else{
+            ROS_ERROR("Gripper Reference state file not found") ;
+            return false ;
+           }
+       
 
     }
 
@@ -199,6 +217,8 @@ namespace franka_LfD{
             GripperAction(commanded_width_ , commanded_force_) ;
             file_counter++ ;
             loop_rate.sleep() ;
+           
+          //  ROS_INFO("COUNT %i", traj_size-file_counter);
             ros::spinOnce() ;
 
         }

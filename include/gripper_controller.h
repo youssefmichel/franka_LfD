@@ -71,6 +71,7 @@ namespace franka_LfD{
             
             bool flag_close_gripper_  ;
             bool flag_open_gripper_ ;
+            std::vector<std::vector<float> > gripper_state_vector_ ;
 
         public: 
 

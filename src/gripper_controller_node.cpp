@@ -47,9 +47,16 @@ int main(int argc, char *argv[])
 //  // MyGripperController.init() ;
 //     MyGripperController.gripperTestRun() ;
 
-  franka_LfD::GripperControllerButton MygripperButton ;
-  MygripperButton.init(nh) ;
-  MygripperButton.updateGripper() ;
+  // franka_LfD::GripperControllerButton MygripperButton ;
+  // MygripperButton.init(nh) ;
+  // MygripperButton.updateGripper() ;
+
+  franka_LfD::GripperControllerTrajectory MygripperController ;
+  string pack_path = ros::package::getPath("franka_LfD") ;
+  string file_name= pack_path + "/data/gripper_state_demo.txt" ;
+
+  MygripperController.init(file_name) ;
+  MygripperController.followReferenceTrajectory() ;
   
   
   return 0 ;
