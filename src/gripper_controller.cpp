@@ -88,7 +88,7 @@ namespace franka_LfD{
            MyGraspClient.sendGoal(grasp_goal);
            
            if (MyGraspClient.waitForResult(ros::Duration(5.0))) {
-            return true ;
+                 return true ;
              } 
 
             else {
@@ -124,6 +124,56 @@ namespace franka_LfD{
         }
 
         return false; 
+
+    }
+
+    bool GripperControllerButton::init( ros::NodeHandle nh) {
+
+             joystick_sub_ =  nh.subscribe("/joy", 20,
+                &GripperControllerButton::joyButtonCallback, this, ros::TransportHints().reliable().tcpNoDelay()); 
+
+                flag_close_gripper_  = false ;
+                flag_open_gripper_   = false ;
+                return true ;
+    }
+
+    void GripperControllerButton::joyButtonCallback(const sensor_msgs::Joy::ConstPtr& joy) {
+
+        ROS_INFO("button") ;
+        if(joy->buttons[2]==1) {
+            flag_open_gripper_= true ;
+            ROS_INFO("Open") ;
+        } 
+         
+         if(joy->buttons[1]==1) {
+            flag_close_gripper_= true ;
+            ROS_INFO("Close") ;
+        } 
+
+    }
+
+    void GripperControllerButton::updateGripper() {
+
+        ros::Rate loop_rate(1000) ;
+
+        while (ros::ok()) {
+
+                if (flag_close_gripper_) {
+
+                 GraspObject() ;
+                 flag_close_gripper_ = false ;
+
+                }
+                if(flag_open_gripper_) {
+
+                    ReleaseObject() ;
+                    flag_open_gripper_  = false ;
+                }
+
+            loop_rate.sleep() ;
+            ros::spinOnce() ;
+
+        }
 
     }
 

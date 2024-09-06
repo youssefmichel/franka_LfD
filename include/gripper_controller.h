@@ -22,6 +22,8 @@
 #include <mutex>
 #include <utility.h>
 #include <ros/package.h>
+#include <sensor_msgs/Joy.h>
+
 using franka_gripper::GraspAction;
 using franka_gripper::HomingAction;
 using franka_gripper::MoveAction;
@@ -58,6 +60,22 @@ namespace franka_LfD{
             bool init() ;
             void gripperTestRun() ;
 
+
+    } ;
+
+    class GripperControllerButton:public GripperControllerBase{
+
+        private:
+            ros::Subscriber joystick_sub_ ; 
+            void joyButtonCallback(const sensor_msgs::Joy::ConstPtr& joy); 
+            
+            bool flag_close_gripper_  ;
+            bool flag_open_gripper_ ;
+
+        public: 
+
+            void updateGripper() ;
+            bool init(ros::NodeHandle nh) ;
 
     } ;
 

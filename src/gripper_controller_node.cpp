@@ -43,10 +43,13 @@ int main(int argc, char *argv[])
     // ros::Publisher ros_pub = nh.advertise<franka_gripper::GraspGoal>("/franka_gripper/grasp/goal",100);
     // ros_pub.publish(grasp_goal) ;
 
-    franka_LfD::GripperControllerBase MyGripperController ;
- // MyGripperController.init() ;
-    MyGripperController.gripperTestRun() ;
+//     franka_LfD::GripperControllerBase MyGripperController ;
+//  // MyGripperController.init() ;
+//     MyGripperController.gripperTestRun() ;
 
+  franka_LfD::GripperControllerButton MygripperButton ;
+  MygripperButton.init(nh) ;
+  MygripperButton.updateGripper() ;
   
   
   return 0 ;
