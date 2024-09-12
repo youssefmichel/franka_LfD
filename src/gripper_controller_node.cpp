@@ -19,44 +19,24 @@ int main(int argc, char *argv[])
 { 
     ros::init(argc, argv,"gripper_controller_node") ;
     ros::NodeHandle nh ;
-    // franka_gripper::GraspGoal grasp_goal ;
-    // grasp_goal.force =  2.0 ;
-    // grasp_goal.width= 0.03 ;
-
-    // grasp_goal.epsilon.inner =0.005;
-    // grasp_goal.epsilon.outer = 0.005; 
-    // grasp_goal.speed=0.1 ;
-
-
-    // GraspClient MyGraspClient_("/franka_gripper/grasp", true) ;
-    // MyGraspClient_.waitForServer(ros::Duration(3.0)) ;
-    // MyGraspClient_.sendGoal(grasp_goal);
-    // if (MyGraspClient_.waitForResult(ros::Duration(5.0))) {
-    //         return true ;
-    //         } 
-
-    //     else {
-    //             ROS_WARN("Could Not Grasp Object !!") ;
-    //             return false ;
-    //         }
-
-    // ros::Publisher ros_pub = nh.advertise<franka_gripper::GraspGoal>("/franka_gripper/grasp/goal",100);
-    // ros_pub.publish(grasp_goal) ;
-
-//     franka_LfD::GripperControllerBase MyGripperController ;
-//  // MyGripperController.init() ;
-//     MyGripperController.gripperTestRun() ;
-
-  // franka_LfD::GripperControllerButton MygripperButton ;
-  // MygripperButton.init(nh) ;
-  // MygripperButton.updateGripper() ;
-
+    string mode ;
+    ros::param::get("mode",mode) ;
+    string interface_type ;
+    ros::param::get("interface", interface_type) ;
+  
+  if(mode=="tele" && interface_type=="joy"){
+    franka_LfD::GripperControllerButton MygripperButton ;
+    MygripperButton.init(nh) ;
+    MygripperButton.updateGripper() ;
+  }
+  
+  else if(mode== "auto"){
   franka_LfD::GripperControllerTrajectory MygripperController ;
   string pack_path = ros::package::getPath("franka_LfD") ;
   string file_name= pack_path + "/data/gripper_state_demo.txt" ;
-
   MygripperController.init(file_name) ;
   MygripperController.followReferenceTrajectory() ;
+  }
   
   
   return 0 ;

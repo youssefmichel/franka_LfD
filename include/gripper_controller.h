@@ -52,8 +52,7 @@ namespace franka_LfD{
             bool StopGrasp() ;
             double commanded_width_ ;
             double commanded_force_ ;
-            
-            
+           
 
         public: 
       
@@ -84,6 +83,7 @@ namespace franka_LfD{
 
         private:
             std::vector<std::vector<float> > ref_trajectory_ ;
+            std::vector<std::vector<float> > act_trajectory_ ;
         public :
             bool init(std::string trajectory_file) ;
             void followReferenceTrajectory() ;

@@ -52,6 +52,8 @@ Vec q_prev_ ;
 franka::RobotState findDirection(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle,  franka::RobotState rob_state)  ;
 Mat GetJacobianEigen(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state) ;
 bool Initial_point_optimal_flag_  ; 
+Vec GetKernel(Mat J) ;
+void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove) ;
 
 
 

@@ -38,9 +38,6 @@ class dmp:
         self.n_points=len(self.Des_traj)
         self.time_end= self.n_points* self.dmp_params.dt 
         
-        
-        
-
      
         b, a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
 
@@ -161,7 +158,6 @@ def gauss_pdf(x,h_i,c_i):
 if __name__ == '__main__': 
 
     catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
-    
     model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
     # model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_demo.txt" 
     skill_learner_=dmp(model_file)

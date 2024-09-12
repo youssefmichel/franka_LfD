@@ -20,6 +20,7 @@ typedef Eigen::Matrix<realtype, Eigen::Dynamic, 1> Vec;
 #endif
 
 
+
 namespace general_utility{
 
     int loadVectorMatrixFromFile (std::string fileName, int cols, vector<vector<float>> &outMat) ; 
@@ -34,6 +35,12 @@ namespace general_utility{
         return 0;   // Zero
     }
 }
+
+    template <typename U,typename V> 
+    bool equalcompare(U a, V b){
+            float epsilon = 0.00000001 ;
+            return std::abs(a - b) < epsilon;
+    }
 }
 
 namespace quat_utils{ 

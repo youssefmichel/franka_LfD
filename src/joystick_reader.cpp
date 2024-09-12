@@ -49,16 +49,15 @@ namespace franka_LfD {
         while(ros::ok()) {
             realtype dt=0.01 ;
             Vec ref_pos  = rob_pos_init_ + dt*scale*joystick_inp_ ; // we treate joystick input as a ref. vel 
-            Vec quat_des = omega2quat(joystick_inp_rot_,rob_quat_init_) ;
+        //  Vec quat_des = omega2quat(joystick_inp_rot_,rob_quat_init_) ;
          
-         
-            // rob_quat_des_ = omega2quat(joystick_inp_rot_,rob_quat_des_) ;
-            // quat_des =rob_quat_des_  ;
+            rob_quat_des_ = omega2quat(joystick_inp_rot_,rob_quat_des_) ;
+            Vec quat_des =rob_quat_des_  ;
     
             rob_pos_des_= rob_pos_des_ + dt*scale * joystick_inp_ ;
             ref_pos= rob_pos_des_ ; 
             
-            std::cout<<"Desired orientation Joy: "<<quat_des.transpose() <<endl ;
+           // std::cout<<"Desired orientation Joy: "<<quat_des.transpose() <<endl ;
             des_pose_msg.pose.position.x= ref_pos(0) ;
             des_pose_msg.pose.position.y= ref_pos(1) ;
             des_pose_msg.pose.position.z= ref_pos(2) ;
@@ -79,13 +78,15 @@ namespace franka_LfD {
 
     Vec joystick_reader::omega2quat(Vec omega, Vec q) {
 
-        Vec eta= 2* omega * 0.01 ;
-        double eta_arr[] = {omega(0),omega(1),omega(2) } ;
+        Vec eta= 0.5* omega * 0.0006 ;
+        cout<<"omega: "<<eta.transpose()<<endl ;
+        double eta_arr[] = {eta(0),eta(1),eta(2) } ;
         double q_arr[] =  {q[0], q[1] ,q[2] , q[3] } ;
         double q_temp[4]  ;
         double q_temp2[4] ;
 
         quat_utils::quat_exp(eta_arr,q_temp) ;
+    
         quat_utils::quat_mult(q_temp, q_arr,q_temp2) ;
         
     

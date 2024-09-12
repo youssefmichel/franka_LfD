@@ -10,22 +10,11 @@ namespace franka_LfD{
  
     {
     
-    ros::Duration timeout(15.0) ;
-    commanded_width_=0.07 ;
+    ROS_INFO("Gripper Node Launched !!") ;
+    commanded_width_= 0.03 ;
     commanded_force_ = 0.0 ;
 
-    // if(MyGraspClient.waitForServer(timeout)) {
-       
-    //      bool homing_success=homingGripper() ;
-    //      ROS_INFO("Gripper Started Successfully !!") ;
-         
-    //      return true ;
-    // }
-    // else {
-    //     ROS_ERROR("Gripper could not be Started !!") ;
-    //     return false ;
-    // }
-        return true ;
+    return true ;
 
     }
 
@@ -76,7 +65,7 @@ namespace franka_LfD{
 
            franka_gripper::GraspGoal grasp_goal ;
            grasp_goal.force =  ref_force;
-           ROS_INFO("GRASP") ;
+           
            
            grasp_goal.width= ref_width ;
            grasp_goal.epsilon.inner =0.005;
@@ -92,7 +81,7 @@ namespace franka_LfD{
              } 
 
             else {
-                ROS_WARN("Could Not Grasp Object !!") ;
+                ROS_WARN("Could Not Apply Gripper Action !!") ;
                 return false ;
              }
 
@@ -101,13 +90,18 @@ namespace franka_LfD{
         
 
      bool GripperControllerBase::ReleaseObject()  {
-         
+
+            if(commanded_width_<MAX_GRIPPER_WIDTH){
                 commanded_width_ = 0.07 ;
                 commanded_force_= 0.0 ;
                 GripperAction(commanded_width_ , commanded_force_) ;
                 return true ;
         
              }
+             else{
+                return false ;
+             }
+}
     
 
     bool GripperControllerBase::StopGrasp() {
@@ -129,27 +123,25 @@ namespace franka_LfD{
 
     bool GripperControllerButton::init( ros::NodeHandle nh) {
 
-             joystick_sub_ =  nh.subscribe("/joy", 20,
+                
+                GripperControllerBase::init() ;
+               joystick_sub_ =  nh.subscribe("/joy", 20,
                 &GripperControllerButton::joyButtonCallback, this, ros::TransportHints().reliable().tcpNoDelay()); 
-
                 flag_close_gripper_  = false ;
                 flag_open_gripper_   = false ;
-                commanded_width_  = MAX_GRIPPER_WIDTH ;
-                commanded_force_  = 0.0 ;
+                ROS_INFO("Gripper Node Button !!") ;
                 return true ;
     }
 
     void GripperControllerButton::joyButtonCallback(const sensor_msgs::Joy::ConstPtr& joy) {
 
-        ROS_INFO("button") ;
+   
         if(joy->buttons[2]==1) {
             flag_open_gripper_= true ;
-            ROS_INFO("Open") ;
         } 
          
          if(joy->buttons[1]==1) {
             flag_close_gripper_= true ;
-            ROS_INFO("Close") ;
         } 
 
     }
@@ -190,8 +182,11 @@ namespace franka_LfD{
 
     bool GripperControllerTrajectory::init(std::string trajectory_file) {
             
+            GripperControllerBase::init() ;
             ROS_INFO("Following Reference Gripper Trajectory Node !!") ;
             string packPath = ros::package::getPath("franka_LfD"); 
+            ROS_INFO("Gripper Node , Following Reference gripper Trajectory !!") ;
+            
            if (general_utility::loadVectorMatrixFromFile(trajectory_file, 2,  ref_trajectory_) ==0 ) {
             return true ;
            }
@@ -199,6 +194,7 @@ namespace franka_LfD{
             ROS_ERROR("Gripper Reference state file not found") ;
             return false ;
            }
+           
        
 
     }
@@ -211,17 +207,29 @@ namespace franka_LfD{
 
         while (ros::ok() && file_counter<traj_size-1) {
 
-            commanded_width_ = ref_trajectory_[file_counter][0] ;
-            commanded_force_ = ref_trajectory_[file_counter][1] ;
-
+            realtype des_width =  ref_trajectory_[file_counter][0] ; 
+            realtype des_force =  ref_trajectory_[file_counter][1] ; 
+           
+           //change gripper state only if the current state does not match des. one
+            if(! general_utility::equalcompare(des_width,commanded_width_) || ! general_utility::equalcompare(des_force,commanded_force_)) {
             GripperAction(commanded_width_ , commanded_force_) ;
+            commanded_width_ =  des_width ;
+            commanded_force_ =  des_force ;
+            }
+         
+            act_trajectory_.push_back(std::vector<float>())  ;
+            act_trajectory_[file_counter].push_back(commanded_width_) ;
+            act_trajectory_[file_counter].push_back(commanded_force_) ;
+
             file_counter++ ;
             loop_rate.sleep() ;
-           
-          //  ROS_INFO("COUNT %i", traj_size-file_counter);
+        
             ros::spinOnce() ;
 
         }
+
+        string path= ros::package::getPath("franka_LfD") + "/data/gripper_state_act.txt" ; 
+        general_utility::saveVectorMatrixToFile(path,act_trajectory_) ;
 
 
     }

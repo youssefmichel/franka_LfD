@@ -10,8 +10,9 @@ NullSpaceController::NullSpaceController(std::unique_ptr<franka_hw::FrankaModelH
     Eigen::Map<Eigen::Matrix<double, 6,7>> J(jacobian_array.data()) ;
     cout<<"Manip Index: "<<computeManipIndex(J)<<endl  ;
     curr_grad_direc_=gradDirection::LEFT ;
+    
     Initial_point_optimal_flag_ = false; 
-    ROS_INFO("Null Space Controller For Singularity Optimization") ;
+    ROS_INFO("Null Space Controller For Singularity Optimization initialized !!") ;
 
 }
 
@@ -19,25 +20,53 @@ NullSpaceController::NullSpaceController() {
     
 }
 
+Vec NullSpaceController::GetKernel(Mat J){
+    // Compute the Null Space Kernel (Ref Cartesian Impedance control of redundant and Flexible Joint Robots, Page 48)
+    Vec Z=Vec::Zero(7);
+
+    for (int i=0;i<7;i++){
+     Mat J_temp=J ;
+     removeColumn(J_temp,i);
+     Z(i)=pow(-1,7+i)*J_temp.determinant();
+    }
+
+    Z=Z/Z.norm() ;
+    return Z ;
+
+}
+
+void NullSpaceController::removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()-1;
+
+    if( colToRemove < numCols )
+        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+
+    matrix.conservativeResize(numRows,numCols);
+}
+
+
+
+
 franka::RobotState NullSpaceController::findDirection(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle,  franka::RobotState robot_state){
     
     //Find Initial Direction of minimization 
-    double dt=0.04 ;
+    double dt=0.01 ;
     Mat J= GetJacobianEigen(model_handle, robot_state ) ;
     Eigen::FullPivLU<Mat> lu(J) ; 
-    Mat Z= lu.kernel() ; 
+   // Mat Z= lu.kernel() ; 
     Eigen::Map <Eigen::Matrix<double, 7,1>> q(robot_state.q.data()) ; 
+
+    Vec Z = GetKernel(J) ;
     
-    Vec q_right= q - Z*dt;
-    Vec q_left= q  + Z*dt;
+    Vec q_right = q    -   Z*dt;
+    Vec q_left  =  q   + Z*dt;
    
 
     franka::RobotState robot_state_right= robot_state ;
     franka::RobotState robot_state_left= robot_state ;
-    cout <<"qRight: "<<q_right.transpose() <<endl ;
-    cout <<"qLeft: "<<q_left.transpose() <<endl ;
-
-
+ 
     for (int i=0 ; i <7 ; i++) {
 
         robot_state_right.q[i] = q_right[i] ;
@@ -51,7 +80,6 @@ franka::RobotState NullSpaceController::findDirection(std::unique_ptr<franka_hw:
     if( computeManipIndex(J_right) > computeManipIndex(J)  ) {
 
         curr_grad_direc_ = gradDirection::RIGHT ;
-     
         return robot_state_right ;       
 
     }
@@ -99,8 +127,10 @@ Vec NullSpaceController::findOptimalConfig(std::unique_ptr<franka_hw::FrankaMode
    
     for (int k=0 ; k<N_OF_ITER ; k++ ) {
 
-    Eigen::FullPivLU<Mat> lu(J) ; 
-    Mat Z= lu.kernel() ; 
+    // Eigen::FullPivLU<Mat> lu(J) ; 
+    // Mat Z= lu.kernel() ; 
+    
+    Vec Z =GetKernel(J) ;
     Vec dq= q_curr-q_prev_ ;
  
     Mat tmp = Z*Mat::Identity(q_curr.size() , q_curr.size() ) *Z.transpose() ; 
@@ -128,7 +158,6 @@ Vec NullSpaceController::findOptimalConfig(std::unique_ptr<franka_hw::FrankaMode
         
     }
 
-    
 
     }
 
