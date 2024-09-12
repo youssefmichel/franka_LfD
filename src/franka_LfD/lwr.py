@@ -42,7 +42,7 @@ class lwr:
 
         self.Time_tot= self.N_points  *self.dt
         self.Time= np.linspace(0,self.Time_tot,self.N_points) 
-        self.N_models= 10
+        self.N_models= 15
         self.centers=np.linspace(0,self.Time_tot,self.N_models)
 
         
@@ -69,7 +69,6 @@ class lwr:
             
             A_k =  np.linalg.inv(temp) @ self.X.T @ W_k @ self.Des_traj 
             
-          
             self.A_k.append(A_k)
             self.W_k.append(W_k)
         
@@ -131,11 +130,15 @@ if __name__ == '__main__':
 
     print("Current working directory:", current_directory)
     
+    catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
+    model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
+   
+    Des_tra_tot=np.genfromtxt(model_file) 
+    Des_traj= Des_tra_tot[4000:6500,:3]
     model_file= "/home/dhrikarl/Codes/ros_tutorials_ws/src/turtle_control/data/demo.txt" 
-    Des_traj=np.genfromtxt(model_file) /1
 
 
-    MyDmPLearner = lwr(model_file)
+    MyDmPLearner = lwr(None,Des_traj)
     MyDmPLearner.learn_lwr()
     Learnt_traj= MyDmPLearner.regression()  
     # MyDmPLearner.command_trajectory(Learnt_traj )

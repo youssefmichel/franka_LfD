@@ -13,34 +13,34 @@ from dataclasses import dataclass
 
 class dmp_params:
     dt: float= 0.001 
-    n_models: int= 6
-    alpha: float= 1
-    kp: float=10 
+    n_models: int= 15
+    alpha: float= 2
+    kp: float=70
     kd: float= 1*np.sqrt(2*kp)
 
 
 
 class dmp: 
-    def __init__(self,model_file = None , Des_traj_data= None ): 
+    def __init__(self, model_file = None , Des_traj_data= None ): 
         
         if model_file is not None:
-            # Load model from file
             self.Des_traj=np.genfromtxt(model_file) 
+
         elif Des_traj_data is not None:
-            # Use the provided matrix
             self.Des_traj = Des_traj_data
         else:
             raise ValueError("Either model_file or Data matrix must be provided !!!")
 
         self.dmp_params=dmp_params()  
         order=2
-        cutoff_freq=9
+        cutoff_freq=3
         self.n_points=len(self.Des_traj)
         self.time_end= self.n_points* self.dmp_params.dt 
+        self.tau = self.time_end 
         
-     
-        b, a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
+        
 
+        b, a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
         self.Des_traj=filtfilt(b,a,self.Des_traj,axis=0) 
 
         self.Des_traj_dot=np.diff(self.Des_traj,axis=0) /self.dmp_params.dt
@@ -49,12 +49,12 @@ class dmp:
         self.Des_traj_ddot=np.diff(self.Des_traj_dot,axis=0)/self.dmp_params.dt 
         self.Des_traj_ddot=filtfilt(b,a,self.Des_traj_ddot,axis=0) 
 
-        # self.n_points=1000 
+
         self.Des_traj= interpolate_traj(self.Des_traj,self.n_points)
         self.Des_traj_dot=interpolate_traj(self.Des_traj_dot,self.n_points)
         self.Des_traj_ddot= interpolate_traj(self.Des_traj_ddot,self.n_points)
 
-        self.decay= canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt)
+        self.decay= canonical_dynamics(self.n_points,self.dmp_params.alpha,self.dmp_params.dt,self.tau)
         plt.plot(self.decay)
         plt.title("decay DMP") 
         plt.show()
@@ -62,56 +62,58 @@ class dmp:
     def learn_dmp(self): 
 
         self.Mu = np.linspace(0, self.time_end, self.dmp_params.n_models) 
-        self.sigma=0.0002 
+        self.sigma=0.01
         self.data_dmp_list = [] 
         self.goal= self.Des_traj[self.n_points-1,: ]
         data_dmp_list=[]
 
         for i in range(self.n_points): 
-            temp= self.Des_traj_ddot[i,:] - (self.goal - self.Des_traj[i,:]) * self.dmp_params.kp + self.Des_traj_dot[i,:]*self.dmp_params.kd
-            
-            temp = temp/self.decay[i] 
+            temp= pow(self.tau,2)* self.Des_traj_ddot[i,:] - (self.goal - self.Des_traj[i,:]) * self.dmp_params.kp + self.tau*self.Des_traj_dot[i,:]*self.dmp_params.kd
             data_dmp_list.append( temp ) 
         
         data_dmp=np.array(data_dmp_list)
-        H = np.zeros( (self.dmp_params.n_models, self.n_points) )
+        H= np.zeros(( self.n_points, self.dmp_params.n_models) )
 
-        for i in range(self.dmp_params.n_models):
-            sum=0 
-            for j in range(self.n_points):
-                temp= gauss_pdf(self.decay[j], self.sigma, self.Mu[i]) 
-                H[i,j]=temp
-                sum=sum+temp 
+        for i in range(self.n_points):
+            sum = 0 
+            for j in range(self.dmp_params.n_models):
+                temp= gauss_pdf(self.decay[i], self.sigma, self.Mu[j]) 
+                sum = sum + temp 
+                H[i,j] = temp * self.decay[i]
 
-            H[i,:]= H[i,:] /sum 
-        
-        X=np.ones([self.n_points,1]) 
-       
+            H[i,:] =  H[i,:] /sum 
 
-        self.Muf_list= []
+
         H_inv= np.linalg.pinv(H)
-        Y= data_dmp
-   
-        self.currF= data_dmp.T @ H_inv 
-        self.currF = self.currF @ H 
+        W=   H_inv @ data_dmp
+        self.currF = H @ W 
+        
+        plt.plot(self.currF) 
+        plt.plot(data_dmp,'--')
+        plt.show()
+        print(self.currF[1,:])
+     
       
     
       
     def simulate_dmp_dynamics(self): 
         
-        x= self.Des_traj[0,:]
-        x_dot=x*0 
+        y= self.Des_traj[0,:]
+        z=0*y
         sim_traj=[]
-        for i in range(self.n_points+900):
+
+        for i in range(self.n_points+300):
 
             if(i<self.n_points-2):
-               ref_acc= self.dmp_params.kp* (self.goal - x ) - self.dmp_params.kd * x_dot + self.currF[:,i] *self.decay[i]
+               z_dot= self.dmp_params.kp* (self.goal - y ) - self.dmp_params.kd * z+ 1*self.currF[i,:] 
             else: 
-               ref_acc= self.dmp_params.kp* (self.goal - x ) - self.dmp_params.kd * x_dot 
+               z_dot= self.dmp_params.kp* (self.goal - y ) - self.dmp_params.kd * z
 
-            x_dot=x_dot + self.dmp_params.dt* ref_acc 
-            x = x + self.dmp_params.dt * x_dot 
-            sim_traj.append(x) 
+            z_dot=z_dot/self.tau 
+            z= z + z_dot *self.dmp_params.dt 
+            y_dot= z/self.tau 
+            y = y+ self.dmp_params.dt *y_dot 
+            sim_traj.append(y) 
         
         sim_res=np.array(sim_traj) 
      
@@ -140,10 +142,10 @@ def interpolate_traj(x_traj,n_points):
     #         self.decay.append( np.exp(-self.dmp_params.alpha* (i)*self.dmp_params.dt)) 
     #     return self.decay 
     
-def canonical_dynamics(n_points,alpha,dt):
+def canonical_dynamics(n_points,alpha,dt,tau=1):
         decay=[]
         for i in range(n_points):
-           decay.append( np.exp(-alpha* (i)*dt)) 
+           decay.append( np.exp(-alpha* (i)*dt /tau )) 
 
         return decay 
 
@@ -159,8 +161,9 @@ if __name__ == '__main__':
 
     catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
     model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
-    # model_file= "/home/dhrikarl/Codes/franka_ws/src/franka_LfD/data/rob_pose_demo.txt" 
-    skill_learner_=dmp(model_file)
+    Des_tra_tot=np.genfromtxt(model_file) 
+    Des_traj= Des_tra_tot[4200:6500,:3]
+    skill_learner_=dmp(None,Des_traj)
     skill_learner_.learn_dmp()
     skill_learner_.simulate_dmp_dynamics()
 

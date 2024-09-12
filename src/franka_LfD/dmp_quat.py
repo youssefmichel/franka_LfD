@@ -17,7 +17,7 @@ class dmp_params_quat:
     dt: float= 0.001
     n_models: int= 6
     alpha: float= 1
-    kp: float=30.0001 #spring part affects learning @TODO: Check
+    kp: float=0 #spring part affects learning @TODO: Check
     kd: float= 2*1.0* np.sqrt(kp)
     
 
@@ -149,8 +149,8 @@ class dmp_quat:
             quat_diff= myQuaternion.log_map( quat_curr, self.quat_goal )
             quat_diff_vec=quat_diff
 
-            Y= self.Omega_dot[i,:] - self.dmp_params.kp  * quat_diff_vec
-            + self.dmp_params.kd *self.Omega[i,:] 
+            Y= self.Omega_dot[i,:] - self.dmp_params.kp  * quat_diff_vec + self.dmp_params.kd *self.Omega[i,:] 
+            
            
             Y=Y/max(self.decay[i],0.01)
             data_dmp_list.append(Y) 
@@ -165,8 +165,9 @@ if __name__ == '__main__':
     catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
     
     model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
-    
-    skill_learner=dmp_quat(model_file)
+    Des_tra_tot=np.genfromtxt(model_file) 
+    Des_traj= Des_tra_tot[2000:3800,:4]
+    skill_learner=dmp_quat(None, Des_traj)
     skill_learner.learn_dmp()
     skill_learner.simulate_dmp_dynamics()
 

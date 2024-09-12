@@ -16,6 +16,9 @@ from lwr import lwr
 from lwr_quat import lwr_quat
 from dmp import dmp 
 from dmp_quat import dmp_quat
+from pyquaternion import Quaternion
+from myQuaternion import myQuaternion
+
 
 class skill_learner: 
     def __init__(self,model_file,model_file_quat): 
@@ -160,6 +163,10 @@ if __name__ == '__main__':
     
     model_file_quat= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
     model_file = catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
+    model_file_gripper=  catkin_ws_dir + "/src/franka_LfD/data/gripper_state_demo.txt"  
+    gripper_state=np.genfromtxt(model_file_gripper)
+    plt.plot(gripper_state)
+    plt.show() 
 
 
     skill_learner_=skill_learner(model_file,model_file_quat)

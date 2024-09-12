@@ -54,7 +54,7 @@ class lwr_quat(lwr):
         self.Des_traj_quat=filtfilt(b,a,self.Des_traj_quat,axis=0) 
         self.Omega=filtfilt(b,a,self.Omega,axis=0) 
         self.Des_traj=self.Omega  #since LWR is performed on omega now
-        self.N_models=8
+        self.N_models=18
             
         self.dt=0.001 
         self.Time_tot= self.N_points  *self.dt
@@ -89,6 +89,26 @@ class lwr_quat(lwr):
          
          return sim_traj
 
+if __name__ == '__main__':
+
+    current_directory = os.getcwd()
+
+    print("Current working directory:", current_directory)
+    
+    catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
+    model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
+    Des_tra_tot=np.genfromtxt(model_file) 
+    Des_traj= Des_tra_tot[:,:4]
+   
+    MyDmPLearner = lwr(None,Des_traj)
+    MyDmPLearner.learn_lwr()
+    Learnt_traj= MyDmPLearner.regression()  
+    # MyDmPLearner.command_trajectory(Learnt_traj )
+ 
+
+    plt.plot(Learnt_traj)
+    plt.plot(Des_traj, '--')
+    plt.show()
 
 
 

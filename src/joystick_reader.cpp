@@ -79,7 +79,6 @@ namespace franka_LfD {
     Vec joystick_reader::omega2quat(Vec omega, Vec q) {
 
         Vec eta= 0.5* omega * 0.0006 ;
-        cout<<"omega: "<<eta.transpose()<<endl ;
         double eta_arr[] = {eta(0),eta(1),eta(2) } ;
         double q_arr[] =  {q[0], q[1] ,q[2] , q[3] } ;
         double q_temp[4]  ;
