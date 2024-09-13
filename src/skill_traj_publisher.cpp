@@ -4,12 +4,11 @@ namespace franka_LfD {
 
     
     
-    void skill_publisher::init(int n_skills,ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw) {
+   bool skill_publisher::init(int n_skills,ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw) {
 
         ROS_INFO("Skill Publisher Node !!") ;
         n_skills_=n_skills ;
         string packPath = ros::package::getPath("franka_LfD"); 
-        int n_DOF =3  ;
         des_traj_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/franka/des_pose",10) ;  
         pose_visualizer_pub_ = nh.advertise<visualization_msgs::Marker>("visualization_marker",10) ;
         string link_name ;
@@ -19,15 +18,18 @@ namespace franka_LfD {
         }
 
         points_.header.frame_id ="panda_link0" ;
-        //points_.header.frame_id =link_name ;
         std::string arm_id;
      // client = node_handle.serviceClient<franka_LfD::learn_traj>("learn_traj");; 
   
         if (!nh.getParam("arm_id", arm_id)) {
         ROS_ERROR_STREAM("CartesianImpedanceController: Could not read parameter arm_id");
+        return false ;
         }
         
-
+        if(readSkillsfromFile(packPath)==false) {
+            return false ;
+        }
+        
         // const franka_hw::ModelBase* model_;
 
         // franka::RobotState state ; 
@@ -43,23 +45,39 @@ namespace franka_LfD {
         // get_current_robot_state(current_robot_position_) ;
         // cout <<"Initial Robot state" <<current_robot_position_.transpose() <<endl ;
 
+   
 
-        for (int i=0 ; i <n_skills ; i++ ) {
+        sleep(0.1) ;
+        return true ;
+
+
+    }
+
+    bool skill_publisher::readSkillsfromFile(string packPath) {
+            
+            for (int i=0 ; i <n_skills_ ; i++ ) {
 
             string pose_file= packPath + "/data/skill_" + std::to_string(i) + ".txt" ;
             string pose_file_quat= packPath + "/data/skill_quat_" + std::to_string(i) + ".txt" ;
             std::vector<std::vector<float>> temp_vec ;
-            general_utility::loadVectorMatrixFromFile(pose_file, n_DOF,  temp_vec) ;
+           
+            if(general_utility::loadVectorMatrixFromFile(pose_file, 3,  temp_vec) == -1){
+               ROS_ERROR_STREAM("Trajectory Pose File Not found ! "); 
+               return false ;
+            } 
             std::vector<std::vector<float>> temp_vec_quat ;
-            general_utility::loadVectorMatrixFromFile(pose_file_quat, 4,  temp_vec_quat) ;
+
+            if(general_utility::loadVectorMatrixFromFile(pose_file_quat, 4,  temp_vec_quat)==-1){
+                
+                ROS_ERROR_STREAM("Orientation Pose File Not found ! "); 
+                return false ;
+            } 
+
             Des_traj_list_.push_back(temp_vec) ;
             Des_traj_quat_list_.push_back(temp_vec_quat) ;
 
         }
-
-        sleep(0.1) ;
-
-
+        return true ;
     }
 
      void skill_publisher::visualize_des_pose() {
@@ -94,7 +112,6 @@ namespace franka_LfD {
 
     void skill_publisher::update_act_rob_pose_callback(geometry_msgs::PoseStampedConstPtr& act_rob_pose_msg ) {
 
-
     }
 
     void skill_publisher::get_current_robot_state (Eigen::Vector3d& position ) {
@@ -105,21 +122,30 @@ namespace franka_LfD {
  
     }
 
+
     int skill_publisher::publish_des_traj() {
-
-
-         ros::Rate loop_rate(1000);  
+         
         for (int i=0 ; i <n_skills_ ; i++  ) {
 
-            int file_counter= 0 ; 
+        
             std::vector <std::vector <float>> curr_traj = Des_traj_list_.at(i) ; 
             std::vector <std::vector <float>> curr_traj_quat = Des_traj_quat_list_.at(i) ; 
+            publish_traj_segment(curr_traj,curr_traj_quat  ) ;
+        }
+
+        return 1 ;
+
+    }
+
+    bool skill_publisher::publish_traj_segment(const std::vector <std::vector <float>>& curr_traj, const std::vector <std::vector <float>>& curr_traj_quat) {
+
             int dim_traj= curr_traj.size() ;
             realtype t_elap= 0 ;
+            int file_counter= 0 ;
+            ros::Rate loop_rate(1000);  
             
             while(ros::ok() && file_counter < dim_traj-1) {
 
-    
                 des_pose_msg_.pose.position.x=curr_traj[file_counter][0]  ;
                 des_pose_msg_.pose.position.y=curr_traj[file_counter][1]  ;
                 des_pose_msg_.pose.position.z=curr_traj[file_counter][2]  ;
@@ -136,7 +162,6 @@ namespace franka_LfD {
                 t_elap=0 ;
                 }
               
-            
                 file_counter ++ ;
                 loop_rate.sleep() ; 
                
@@ -145,16 +170,83 @@ namespace franka_LfD {
              
 
             }
-            ROS_INFO("finished one !") ;
 
             }
-        ROS_INFO("Published ALL") ;
-        return 1 ;
 
 
+    
+
+
+
+    bool skill_publisher_gripper::init(ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw ) {
+           
+            string packPath = ros::package::getPath("franka_LfD"); 
+            
+
+            std::ifstream state_file(packPath+ "/data/state_list.txt" ) ;
+
+            if (! state_file.is_open()) {
+               std::cerr << "Error opening char list file." << std::endl;
+                return false ;
+             }
+              
+            char c;
+            while (state_file.get(c)) {
+            state_list_.push_back(c);
+            }
+
+            N_movements_= 0 ;
+            Nstates_= state_list_.size() ;
+            for(int i=0 ; i<Nstates_ ; i++) {
+                    if(state_list_[i] == 'm' ) {
+                        N_movements_ ++  ;
+                    }
+            }
+
+            N_gripper_actions_ = Nstates_  - N_movements_ ;
+            if(skill_publisher::init(N_movements_ , nh, robot_hw)==false) {
+                return false ;
+            }
 
 
     }
+
+    bool skill_publisher_gripper::skillRollout() {
+
+        int mov_counter =  0; 
+ 
+        for (int i=0 ; i<Nstates_ ; i++ ) {
+
+            char state=state_list_[i] ; 
+                
+            std::vector <std::vector <float>> curr_traj = Des_traj_list_.at(mov_counter ) ; 
+            std::vector <std::vector <float>> curr_traj_quat = Des_traj_quat_list_.at(mov_counter ) ;
+            
+            switch (state)
+            {
+            case 'm':
+                
+                mov_counter++ ; 
+                publish_traj_segment(curr_traj,curr_traj_quat  ) ;
+                break;
+
+            case 'o':
+               
+               break;
+            
+            case 'c': 
+                
+
+            default:
+                break;
+            }
+
+        }
+
+
+    }
+
+
 
 
 }
