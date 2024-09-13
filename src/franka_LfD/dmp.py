@@ -13,9 +13,9 @@ from dataclasses import dataclass
 
 class dmp_params:
     dt: float= 0.001 
-    n_models: int= 15
-    alpha: float= 2
-    kp: float=70
+    n_models: int= 8
+    alpha: float= 4
+    kp: float=100
     kd: float= 1*np.sqrt(2*kp)
 
 
@@ -62,7 +62,7 @@ class dmp:
     def learn_dmp(self): 
 
         self.Mu = np.linspace(0, self.time_end, self.dmp_params.n_models) 
-        self.sigma=0.01
+        self.sigma=0.001
         self.data_dmp_list = [] 
         self.goal= self.Des_traj[self.n_points-1,: ]
         data_dmp_list=[]
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
     model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
     Des_tra_tot=np.genfromtxt(model_file) 
-    Des_traj= Des_tra_tot[4200:6500,:3]
+    Des_traj= Des_tra_tot[3700:6500,:3]
     skill_learner_=dmp(None,Des_traj)
     skill_learner_.learn_dmp()
     skill_learner_.simulate_dmp_dynamics()

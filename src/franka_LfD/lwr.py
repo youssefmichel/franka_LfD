@@ -36,13 +36,12 @@ class lwr:
         self.Des_traj[:,0]=filtfilt(self.b,self.a,self.Des_traj[:,0])
         self.Des_traj[:,1]=filtfilt(self.b,self.a,self.Des_traj[:,1])
 
-    
+
         self.dt=0.001 
         
-
         self.Time_tot= self.N_points  *self.dt
         self.Time= np.linspace(0,self.Time_tot,self.N_points) 
-        self.N_models= 15
+        self.N_models= 22
         self.centers=np.linspace(0,self.Time_tot,self.N_models)
 
         
@@ -134,7 +133,7 @@ if __name__ == '__main__':
     model_file= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
    
     Des_tra_tot=np.genfromtxt(model_file) 
-    Des_traj= Des_tra_tot[4000:6500,:3]
+    Des_traj= Des_tra_tot[3000:6500,:3]
     model_file= "/home/dhrikarl/Codes/ros_tutorials_ws/src/turtle_control/data/demo.txt" 
 
 
