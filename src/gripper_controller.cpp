@@ -11,8 +11,8 @@ namespace franka_LfD{
     {
     
     ROS_INFO("Gripper Node Launched !!") ;
-    commanded_width_= 0.03 ;
-    commanded_force_ = 0.0 ;
+    commanded_width_= MIN_GRIPPER_WIDTH ;
+    commanded_force_ = MIN_GRIPPER_FORCE ;
 
     return true ;
 
@@ -48,8 +48,8 @@ namespace franka_LfD{
     bool GripperControllerBase::GraspObject() {
 
         if(commanded_width_>MIN_GRIPPER_WIDTH) { // should only close if gripper is open 
-                commanded_width_ = 0.03 ;
-                commanded_force_= 2.0 ;
+                commanded_width_ = MIN_GRIPPER_WIDTH ;
+                commanded_force_=  MAX_GRIPPER_FORCE ;
                 GripperAction(commanded_width_ , commanded_force_) ;
                 return true ;
         }
@@ -65,7 +65,7 @@ namespace franka_LfD{
 
            franka_gripper::GraspGoal grasp_goal ;
            grasp_goal.force =  ref_force;
-           
+     
            
            grasp_goal.width= ref_width ;
            grasp_goal.epsilon.inner =0.005;
@@ -75,6 +75,7 @@ namespace franka_LfD{
            GraspClient MyGraspClient("/franka_gripper/grasp", true) ;
            MyGraspClient.waitForServer(ros::Duration(2.0)) ;
            MyGraspClient.sendGoal(grasp_goal);
+           
            
            if (MyGraspClient.waitForResult(ros::Duration(5.0))) {
                  return true ;
@@ -92,8 +93,8 @@ namespace franka_LfD{
      bool GripperControllerBase::ReleaseObject()  {
 
             if(commanded_width_<MAX_GRIPPER_WIDTH){
-                commanded_width_ = 0.07 ;
-                commanded_force_= 0.0 ;
+                commanded_width_ = MAX_GRIPPER_WIDTH ;
+                commanded_force_= MIN_GRIPPER_WIDTH ;
                 GripperAction(commanded_width_ , commanded_force_) ;
                 return true ;
         
@@ -169,6 +170,7 @@ namespace franka_LfD{
             gripper_state_vector_.push_back(std::vector<float>()) ;
             gripper_state_vector_[file_counter].push_back(commanded_width_) ;
             gripper_state_vector_[file_counter].push_back(commanded_force_) ;
+            gripper_state_vector_[file_counter].push_back(ros::Time::now().toSec()) ;
             file_counter ++ ;
             ros::spinOnce() ;
 
@@ -220,6 +222,7 @@ namespace franka_LfD{
             act_trajectory_.push_back(std::vector<float>())  ;
             act_trajectory_[file_counter].push_back(commanded_width_) ;
             act_trajectory_[file_counter].push_back(commanded_force_) ;
+            act_trajectory_[file_counter].push_back(ros::Time::now().toSec()) ;
 
             file_counter++ ;
             loop_rate.sleep() ;

@@ -1,10 +1,13 @@
 #include "skill_traj_publisher.h" 
+#include <iostream>
+#include <thread>
+#include <chrono>
 
 namespace franka_LfD { 
 
     
     
-   bool skill_publisher::init(int n_skills,ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw) {
+   bool SkillPublisher::init(int n_skills,ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw) {
 
         ROS_INFO("Skill Publisher Node !!") ;
         n_skills_=n_skills ;
@@ -47,13 +50,15 @@ namespace franka_LfD {
 
    
 
-        sleep(0.1) ;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        
+
         return true ;
 
 
     }
 
-    bool skill_publisher::readSkillsfromFile(string packPath) {
+    bool SkillPublisher::readSkillsfromFile(string packPath) {
             
             for (int i=0 ; i <n_skills_ ; i++ ) {
 
@@ -80,7 +85,7 @@ namespace franka_LfD {
         return true ;
     }
 
-     void skill_publisher::visualize_des_pose() {
+     void SkillPublisher::visualize_des_pose() {
         points_.header.stamp=ros::Time::now() ;
         points_.ns="franka_des_pose_viz" ;
         points_.action=visualization_msgs::Marker::ADD ;
@@ -101,20 +106,20 @@ namespace franka_LfD {
          points_.color.a = 1.0;
         points_.pose.orientation.w = 1.0;
         
-        pose_visualizer_pub_ .publish(points_);
+        pose_visualizer_pub_.publish(points_);
 
 
      }
 
-    skill_publisher::~skill_publisher() {
-       ROS_INFO("skill publisher destructed !!") ;
+    SkillPublisher::~SkillPublisher() {
+       ROS_INFO("Skill publisher destructed !!") ;
     }
 
-    void skill_publisher::update_act_rob_pose_callback(geometry_msgs::PoseStampedConstPtr& act_rob_pose_msg ) {
+    void SkillPublisher::update_act_rob_pose_callback(geometry_msgs::PoseStampedConstPtr& act_rob_pose_msg ) {
 
     }
 
-    void skill_publisher::get_current_robot_state (Eigen::Vector3d& position ) {
+    void SkillPublisher::get_current_robot_state (Eigen::Vector3d& position ) {
     franka::RobotState robot_state = state_handle_->getRobotState();
 
     Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
@@ -123,7 +128,7 @@ namespace franka_LfD {
     }
 
 
-    int skill_publisher::publish_des_traj() {
+    int SkillPublisher::publish_des_traj() {
          
         for (int i=0 ; i <n_skills_ ; i++  ) {
 
@@ -137,12 +142,13 @@ namespace franka_LfD {
 
     }
 
-    bool skill_publisher::publish_traj_segment(const std::vector <std::vector <float>>& curr_traj, const std::vector <std::vector <float>>& curr_traj_quat) {
+    void SkillPublisher::publish_traj_segment(const std::vector <std::vector <float>>& curr_traj, const std::vector <std::vector <float>>& curr_traj_quat) {
 
             int dim_traj= curr_traj.size() ;
             realtype t_elap= 0 ;
             int file_counter= 0 ;
-            ros::Rate loop_rate(1000);  
+            ros::Rate loop_rate(800);  
+            
             
             while(ros::ok() && file_counter < dim_traj-1) {
 
@@ -161,15 +167,25 @@ namespace franka_LfD {
                 visualize_des_pose() ;
                 t_elap=0 ;
                 }
-              
+
+                test_des_.push_back(std::vector<float>()) ;
+                test_des_[file_counter].push_back(curr_traj[file_counter][0]) ;
+                test_des_[file_counter].push_back(curr_traj[file_counter][1]) ;
+                test_des_[file_counter].push_back(curr_traj[file_counter][2]) ;
+
                 file_counter ++ ;
-                loop_rate.sleep() ; 
+                //std::this_thread::sleep_for(std::chrono::milliseconds(1.3));
+                loop_rate.sleep() ;
                
                 ros::spinOnce() ;
                 t_elap +=0.01 ;
              
 
             }
+
+            string pack_path= ros::package::getPath("franka_LfD") ; 
+          //  string file_name= pack_path + "/data/test_des.txt" ;
+          //  general_utility::saveVectorMatrixToFile(file_name,test_des_) ;
 
             }
 
@@ -178,7 +194,7 @@ namespace franka_LfD {
 
 
 
-    bool skill_publisher_gripper::init(ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw ) {
+    bool SkillPublisherGripper::init( ros::NodeHandle nh, hardware_interface::RobotHW* robot_hw ) {
            
             string packPath = ros::package::getPath("franka_LfD"); 
             
@@ -192,8 +208,11 @@ namespace franka_LfD {
               
             char c;
             while (state_file.get(c)) {
+                if (c != ' ' && c != '\n' && c != '\t') {
             state_list_.push_back(c);
+                }
             }
+            
 
             N_movements_= 0 ;
             Nstates_= state_list_.size() ;
@@ -202,40 +221,61 @@ namespace franka_LfD {
                         N_movements_ ++  ;
                     }
             }
-
+            
+            cout<<"state list size:  "<<Nstates_<<std::endl ;
+            cout<<"state list:  "<<state_list_.data()<<std::endl ;
+         
             N_gripper_actions_ = Nstates_  - N_movements_ ;
-            if(skill_publisher::init(N_movements_ , nh, robot_hw)==false) {
+            if(SkillPublisher::init(N_movements_ , nh, robot_hw)==false) {
                 return false ;
             }
+
+            MyGripperController_.init() ;
+            return true ;
 
 
     }
 
-    bool skill_publisher_gripper::skillRollout() {
+    bool SkillPublisherGripper::skillRollout() {
 
         int mov_counter =  0; 
- 
         for (int i=0 ; i<Nstates_ ; i++ ) {
 
             char state=state_list_[i] ; 
-                
-            std::vector <std::vector <float>> curr_traj = Des_traj_list_.at(mov_counter ) ; 
-            std::vector <std::vector <float>> curr_traj_quat = Des_traj_quat_list_.at(mov_counter ) ;
-            
+            std::vector <std::vector <float>> curr_traj ;
+            std::vector <std::vector <float>> curr_traj_quat ;
+            cout<<"current state: "<<state<<endl ;
+        
             switch (state)
             {
             case 'm':
                 
+                 curr_traj = Des_traj_list_.at(mov_counter ) ; 
+                 curr_traj_quat = Des_traj_quat_list_.at(mov_counter ) ;
+                 publish_traj_segment(curr_traj,curr_traj_quat  ) ;
                 mov_counter++ ; 
-                publish_traj_segment(curr_traj,curr_traj_quat  ) ;
                 break;
 
             case 'o':
                
+               if( ! MyGripperController_.GripperAction(MAX_GRIPPER_WIDTH,MIN_GRIPPER_FORCE) ) {
+                ROS_ERROR("Could not perform grippper opening action !") ;
+                return false ;
+               }
+               
+               sleep(0.5) ;
                break;
             
             case 'c': 
+               
+               if(! MyGripperController_.GripperAction(MIN_GRIPPER_WIDTH,MAX_GRIPPER_FORCE) ) {
                 
+                ROS_ERROR("Could not perform grippper Closing action !") ;
+                return false ;
+               } 
+              
+                sleep(0.5) ;
+                break ;
 
             default:
                 break;
@@ -243,6 +283,7 @@ namespace franka_LfD {
 
         }
 
+        return true ;
 
     }
 

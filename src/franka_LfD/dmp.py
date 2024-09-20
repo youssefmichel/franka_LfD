@@ -128,11 +128,38 @@ class dmp:
 
 
 
-def interpolate_traj(x_traj,n_points):
+def interpolate_traj(x_traj,n_points= None, t_old= None , t_new= None):
 
-        t_old= np.linspace(0,1, len(x_traj))
+        if(n_points is None and t_old is None and t_old is None):
+            raise ValueError("Invalid inputs for interpolation") 
+        
+   
+        if t_old is not None  : 
+            seen = set()
+            i = 0
+            # necessary check to remove duplicates
+            while  i < len(t_old )  : 
+                if t_old[i] in seen: 
+                    t_old = np.delete(t_old, i)
+                    x_traj =  np.delete(x_traj, i, axis=0)
+                else:
+                    seen.add(t_old[i]) 
+                    i += 1 
+            
+ 
+
+        
+        if( t_old is None):
+            t_old= np.linspace(0,1, len(x_traj))
+        
+
         f_spline = scip.interpolate.make_interp_spline(t_old, x_traj) 
-        t_new=np.linspace(0,1,n_points) 
+        #f_spline = scip.interpolate.CubicSpline(t_old, x_traj) 
+
+        if t_new is None: 
+            t_new=np.linspace(0,1,n_points) 
+        
+
         x_intp=f_spline(t_new)
         return x_intp
     

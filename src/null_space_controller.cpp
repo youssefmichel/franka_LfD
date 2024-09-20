@@ -196,6 +196,4 @@ Mat NullSpaceController::GetJacobianEigen(std::unique_ptr<franka_hw::FrankaModel
 
 
 
-// PLUGINLIB_EXPORT_CLASS(franka_LfD::NullSpaceController,
-//                        controller_interface::ControllerBase)
 

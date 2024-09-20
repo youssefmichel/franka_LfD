@@ -29,7 +29,6 @@ class lwr:
         cutoff_freq=5
         self.N_points= len(self.Des_traj)
 
-        print("Number of points:  ", self.N_points)
         
         self.b, self.a = butter(order, cutoff_freq / (0.5 * self.N_points), btype='low')
 
@@ -41,7 +40,7 @@ class lwr:
         
         self.Time_tot= self.N_points  *self.dt
         self.Time= np.linspace(0,self.Time_tot,self.N_points) 
-        self.N_models= 22
+        self.N_models= 15
         self.centers=np.linspace(0,self.Time_tot,self.N_models)
 
         

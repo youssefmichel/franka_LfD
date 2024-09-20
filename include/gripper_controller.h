@@ -33,8 +33,21 @@ using GraspClient = actionlib::SimpleActionClient<GraspAction>;
 using HomingClient = actionlib::SimpleActionClient<HomingAction>;
 using MoveClient = actionlib::SimpleActionClient<MoveAction>;
 using StopClient = actionlib::SimpleActionClient<StopAction>;
+
 # define MAX_GRIPPER_WIDTH 0.07 
 # define MIN_GRIPPER_WIDTH 0.03
+# define MIN_GRIPPER_FORCE 0.0 
+# define MAX_GRIPPER_FORCE 2.0
+
+/**
+ * @class GripperController
+ * @brief implements gripper-related functionality 
+ * 
+ * The base class provides basic gripper primitives, such as homing, grasping and release of objects
+ * The child class GripperControllerButton controllers the gripper based on button
+ * The other child class controls the gripper to follow a reference trajectory 
+ * consisting of reference width and forces
+ */
 
 
 namespace franka_LfD{
@@ -47,7 +60,7 @@ namespace franka_LfD{
             
             bool homingGripper() ;
             bool GraspObject() ;
-            bool GripperAction(realtype ref_width, realtype ref_force) ; 
+            
             bool ReleaseObject() ;
             bool StopGrasp() ;
             double commanded_width_ ;
@@ -58,6 +71,7 @@ namespace franka_LfD{
       
             bool init() ;
             void gripperTestRun() ;
+            bool GripperAction(realtype ref_width, realtype ref_force) ; 
 
 
     } ;

@@ -19,22 +19,13 @@ int main(int argc, char *argv[])
 { 
   ros::init(argc, argv,"skill_traj_publisher_node") ;
   ros::NodeHandle nh ;
-   ros::NodeHandle node_handle("~");
   hardware_interface::RobotHW* robot_hw ;
 
 
-  // if( ! robot_hw->init(nh, node_handle) ) 
-  //   ROS_ERROR("franka_control_node: Failed to initialize FrankaHW class. Shutting down!"); 
-
-
-  franka_LfD::skill_publisher my_skill_pub  ;
-  my_skill_pub.init(1,nh, robot_hw ) ;
-
-  
-  sleep(2) ;
-  my_skill_pub.publish_des_traj() ;
-
+  franka_LfD::SkillPublisherGripper my_skill_pub  ;
+  my_skill_pub.init(nh, robot_hw ) ;
+  sleep(1) ;
+  my_skill_pub.skillRollout() ;
   return -1 ;
-
 
 }

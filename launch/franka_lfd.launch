@@ -3,16 +3,14 @@
  <param name="mode" value="$(arg mode)"/>
 
   
-
-  
   <arg name="robot" default="panda" doc="choose your robot. Possible values: [panda, fr3]"/>
   <arg name="arm_id" default="$(arg robot)" />
   <rosparam command="load" file="$(find franka_LfD)/config/franka_custom_controllers.yaml" subst_value="true" />
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="cartesian_impedance_controller"/>
 
-  <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" required="false" />
+  <!-- <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" required="false" /> -->
 
-  <node name="gripper_controller_node" pkg="franka_LfD" type="gripper_controller_node" output="screen"/>
+<rosparam command="load" file="$(find franka_LfD)/config/LfD_params.yaml"/>
 
 <group if="$(eval mode == 'auto')">
 <node name="skill_traj_publisher_node" pkg="franka_LfD" type="skill_traj_publisher_node" output="screen"/>
@@ -24,6 +22,7 @@
 <group if="$(eval interface == 'joy')">
 <node name="joystick_reader_node" pkg="franka_LfD" type="joystick_reader_node" output="screen"/>
 <node name="joy_node" pkg="joy" type="joy_node" output="screen"/>
+<node name="gripper_controller_node" pkg="franka_LfD" type="gripper_controller_node" output="screen"/> 
 </group>
 
 <group if="$(eval interface == 'marker')">

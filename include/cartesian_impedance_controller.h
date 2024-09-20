@@ -24,6 +24,15 @@
 #include "franka_LfD/learn_traj.h"
 #include  "null_space_controller.h"
 
+/**
+ * @class CartesianImpedanceController
+ * @brief cartesian impedance controller impllementation
+ * 
+ * The class implemnts the cartesian impedance controller that tracks
+ * desired reference positions and orientations, incoporates also the null space 
+ * action. The controller tracks reference poses provided either by joystick or from a txt file
+ */
+
 
 namespace franka_LfD {
 
@@ -46,8 +55,7 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
   std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
   std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
   std::vector<hardware_interface::JointHandle> joint_handles_;
-  std::vector<std::vector<float>> Des_traj_vec_temp_ ; 
-  int file_counter_des_ ;
+
 
   double filter_params_{0.005};
   double nullspace_stiffness_{20.0};
@@ -67,28 +75,12 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
 
   ros::Publisher marker_pose_pub_ ;
   visualization_msgs::Marker act_pos_lines_ ;
-  
-
-  ros::Subscriber des_pose_sub_ ;
-
-
+   ros::Subscriber des_pose_sub_ ;
    std::vector <std::vector <float> > pose_vector_ ;
    std::vector <std::vector <float> > pose_quat_vector_ ;
    std::string pose_file_ ;
    std::string pose_file_quat_ ;
    int file_counter_ ;
-
-   void visualize_act_pose(Eigen::Vector3d act_pose) ;
-
-//   ros::ServiceClient client ;
-//   franka_LfD::learn_traj srv;
-
-
-  
-  
-
-
-  
 
 
   // Dynamic reconfigure
@@ -97,12 +89,14 @@ class CartesianImpedanceController : public controller_interface::MultiInterface
   ros::NodeHandle dynamic_reconfigure_compliance_param_node_;
   void complianceParamCallback(franka_LfD::compliance_paramConfig& config,
                                uint32_t level);
-                               
-
+                              
   // Equilibrium pose subscriber
   ros::Subscriber sub_equilibrium_pose_;
   void equilibriumPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
   void equilibriumPoseCallback_learned(const geometry_msgs::PoseStampedConstPtr& msg);
+  void visualize_act_pose(Eigen::Vector3d act_pose) ;
+
+
 };
 
 }  // namespace franka_example_controllers

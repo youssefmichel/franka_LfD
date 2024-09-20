@@ -19,41 +19,45 @@
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/franka_state_interface.h>
 #include <utility.h>
-
 #include <ros/package.h> 
+
+/**
+ * @class NullSpaceController
+ * @brief perfomans singularity optimization
+ * 
+ * The class is responsible for obtaining the optimal joint space config. 
+ * that maximizes the manipubaility index
+ */
 
 namespace franka_LfD { 
 
 class NullSpaceController  {
 
-
-
 public: 
-
-                                               
-float computeManipIndex( const Mat &J) ;
-Vec findOptimalConfig(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state)  ;
-NullSpaceController( std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle)  ;
-NullSpaceController() ;
+                                         
+    float computeManipIndex( const Mat &J) ;
+    Vec findOptimalConfig(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state)  ;
+    NullSpaceController( std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle)  ;
+    NullSpaceController() ;
 
 
 private: 
 
-enum gradDirection {
+    enum gradDirection {
 
-    RIGHT=-1, 
-    LEFT=1
+        RIGHT=-1, 
+        LEFT=1
 
-} ;
+    } ;
 
-gradDirection curr_grad_direc_ ;
-float manip_index_prev_ ;
-Vec q_prev_ ;
-franka::RobotState findDirection(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle,  franka::RobotState rob_state)  ;
-Mat GetJacobianEigen(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state) ;
-bool Initial_point_optimal_flag_  ; 
-Vec GetKernel(Mat J) ;
-void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove) ;
+    gradDirection curr_grad_direc_ ;
+    float manip_index_prev_ ;
+    Vec q_prev_ ;
+    franka::RobotState findDirection(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle,  franka::RobotState rob_state)  ;
+    Mat GetJacobianEigen(std::unique_ptr<franka_hw::FrankaModelHandle> &model_handle, franka::RobotState rob_state) ;
+    bool Initial_point_optimal_flag_  ; 
+    Vec GetKernel(Mat J) ;
+    void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove) ;
 
 
 

@@ -24,11 +24,11 @@ class skill_learner:
     def __init__(self,model_file,model_file_quat): 
         temp=np.genfromtxt(model_file)  
         self.Des_traj=temp[:,:3]
-        self.Des_traj_quat = np.genfromtxt(model_file_quat)
+        self.Des_traj_quat = np.genfromtxt(model_file_quat) 
         self.dt =0.001
         order = 4
         cutoff_freq = 4  # in Hz
-        self.n_points=len(self.Des_traj)
+        self.n_points=len(self.Des_traj) 
 
         self.b, self.a = butter(order, cutoff_freq / (0.5 * self.n_points), btype='low')
         self.Des_traj[:,0]=filtfilt(self.b,self.a,self.Des_traj[:,0])

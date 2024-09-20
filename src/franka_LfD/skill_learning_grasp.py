@@ -18,43 +18,61 @@ from dmp_quat import dmp_quat
 from pyquaternion import Quaternion
 from myQuaternion import myQuaternion
 import yaml 
+from scipy import signal
+import pandas as pd  
+
 
 class skill_learner_grasp: 
     def __init__(self,model_file,model_file_quat,model_file_gripper,dt=0.001):
 
-        # if  not os.path.isdir(model_file):  
-        #      raise FileNotFoundError(f"The translational trajectory directory does not exist.")
+        if  not os.path.exists(model_file):  
+              raise FileNotFoundError(f"The translational trajectory directory does not exist.")
         
-        # if  not os.path.isdir(model_file_quat):  
-        #      raise FileNotFoundError(f"The orientation trajectory directory does not exist.")
+        if  not os.path.exists(model_file_quat):  
+             raise FileNotFoundError(f"The orientation trajectory directory does not exist.")
 
-        # if  not os.path.isdir(model_file_gripper):  
-        #      raise FileNotFoundError(f"The gripper trajectory directory does not exist.")
+        if  not os.path.exists(model_file_gripper):  
+             raise FileNotFoundError(f"The gripper trajectory directory does not exist.")
         
-        temp=np.genfromtxt(model_file)
-        self.Des_traj=temp[:,:3] 
+        tempTraj=np.genfromtxt(model_file)
+        tempQ = np.genfromtxt(model_file_quat)
+        tempGrip=np.genfromtxt(model_file_gripper)
+     
+        if len(tempTraj) <100 or len(tempQ) <100 or len(tempGrip)<100: 
+             raise ValueError("Invalid trajectory files")
 
+        self.Des_traj=tempTraj[:,:3] 
+        self.Des_traj_quat=tempQ[:,:] 
+        self.dt = 0.001 
         order=2
         cutoff_freq=4
         n_points = len(self.Des_traj) 
         b, a = butter(order, cutoff_freq / (0.5 * n_points), btype='low')
-        TrajTemp=filtfilt(b,a,self.Des_traj,axis=0) 
+
+        TrajTemp=filtfilt(b,a,self.Des_traj ,axis=0) 
         Traj_dot=np.diff(TrajTemp,axis=0) /dt
         Traj_dot= interpolate_traj(Traj_dot,n_points)
         self.Des_traj= np.hstack((self.Des_traj, Traj_dot))
-        tempQ = np.genfromtxt(model_file_quat)
-        self.Des_traj_quat=tempQ[:,:] 
-        self.Des_traj_gripper=np.genfromtxt(model_file_gripper)
+
+
+        Time_grip = tempGrip[:,2] 
+        Time_des_traj=tempTraj[:,-1] 
+        Time_init= max(Time_grip[0] , Time_des_traj[0]) 
+        Time_max = min(Time_grip[-1] , Time_des_traj[-1]) 
+        Time_comb= np.arange(Time_init,Time_max, self.dt  ) 
+
+        #interpolate to make gripper traj. in the same time range of position traj
+        # we use nearest since it preserves the discrete switching nature of the gripper traj. (needed for segmentation)
+        linear_interp1 = scip.interpolate.interp1d(Time_grip, tempGrip[:,0] ,kind='nearest')
+        linear_interp2 = scip.interpolate.interp1d(Time_grip, tempGrip[:,1],kind='nearest')
+
+        self.Des_traj_gripper= np.column_stack((linear_interp1(Time_comb),linear_interp2(Time_comb)))
+        self.Des_traj_quat = interpolate_traj(self.Des_traj_quat, None , Time_des_traj , Time_comb ) 
         self.Des_traj_quat[:,-3:]=filtfilt(b,a,self.Des_traj_quat[:,-3:],axis=0) 
 
-        plt.figure()
-        plt.plot(self.Des_traj[:,-3:])
-        plt.figure()
-        plt.plot(self.Des_traj_gripper)
-        plt.show()
-      
-        # if len(self.Des_traj <100) or len(self.Des_traj_quat <100) or len(self.Des_traj_gripper<100): 
-        #     raise ValueError("Invalid trajectory files")
+        
+
+
 
         self.segment_trajectory()  
         self.encodeSkills()
@@ -74,8 +92,8 @@ class skill_learner_grasp:
 
         """
         m: move
-        o: open
-        c: close
+        o: open gripper
+        c: close gripper
         """
 
         # We assume a change of state is captured by the gripper width change
@@ -113,6 +131,13 @@ class skill_learner_grasp:
 
             prev_gripper_state=curr_gripp_state 
         
+        # check if there is a movement after the last gripper action 
+        vel_norm= np.linalg.norm(self.Des_traj[indx_list[-1]:-1,-3:],axis=1)
+        if(np.mean(vel_norm)>0.01):
+            self.State_list.append('m')
+            self.traj_segments.append(self.Des_traj[indx_list[-1]:-1,:]) 
+            self.traj_segments_quat.append(self.Des_traj_quat[indx_list[-1]:-1,:]) 
+
         print("states: ", self.State_list)
 
 
@@ -127,7 +152,7 @@ class skill_learner_grasp:
             
             curr_traj= self.traj_segments[i] 
             curr_traj_quat=self.traj_segments_quat[i]
-            print(curr_traj_quat[:,-3:].shape)
+            
             r= self.obtain_relevant_motion(curr_traj[:,-3:], curr_traj_quat[:,-3:])  
 
             # Do additional segmentation to learn the actual motion
@@ -138,24 +163,34 @@ class skill_learner_grasp:
             
 
             print("indices: ", indx_st,indx_end)
-            N_red=200 
+            N_red=2500 
             N_org= len(curr_traj[indx_st:indx_end,:3])
             temp=interpolate_traj(curr_traj[indx_st:indx_end,:3],N_red)
-            MyDmPLearner = lwr(None,curr_traj[indx_st:indx_end,:3])
+            MyDmPLearner = lwr(None,temp)
             MyDmPLearner.learn_lwr()
-            Learnt_traj= MyDmPLearner.regression()
-            # Learnt_traj=interpolate_traj(Learnt_traj_tmp,N_org)
+            Learnt_traj_tmp= MyDmPLearner.regression()
+            Learnt_traj=interpolate_traj(Learnt_traj_tmp,N_org)
             self.traj_segments_learnt.append(Learnt_traj)
 
-            MyDmPLearnerQuat = lwr(None,curr_traj_quat[indx_st:indx_end,:4])
+            temp_q=interpolate_traj(curr_traj_quat[indx_st:indx_end,:4],N_red)
+            MyDmPLearnerQuat = lwr(None,temp_q)
             MyDmPLearnerQuat.learn_lwr()
-            Learnt_traj_quat= MyDmPLearnerQuat.regression()  
+            Learnt_traj_quat_temp= MyDmPLearnerQuat.regression()  
+            Learnt_traj_quat=interpolate_traj(Learnt_traj_quat_temp,N_org)
             self.traj_segments_quat_learnt.append(Learnt_traj_quat)
+
+            plt.figure()
+            plt.plot(Learnt_traj)
+            plt.plot(curr_traj[indx_st:indx_end,:3],'--')
+            plt.title("Trans. Position: Learnt vs Actual(dotted)")
+
             plt.figure()
             plt.plot(Learnt_traj_quat)
             plt.plot(curr_traj_quat[indx_st:indx_end,:4],'--')
+            plt.title("Quaternions: Learnt vs Actual(dotted)")
+            plt.show()
             
-        plt.show()
+        
     
     def saveSkills(self): 
         packpath=os.path.expanduser("~/Codes/franka_ws") 
@@ -169,7 +204,7 @@ class skill_learner_grasp:
                    for row in traj_learnt:
                       f.write(' '.join(map(str, row)) + '\n')
             
-            with open(file_path, 'w') as f:
+            with open(file_path_quat, 'w') as f:
                    for row in traj_learnt_quat:
                       f.write(' '.join(map(str, row)) + '\n')
         
@@ -183,15 +218,16 @@ class skill_learner_grasp:
         'N_states': N_states
         }
 
-        file_path_yaml = packpath+ "/src/franka_LfD/config/learning_params.yaml" 
-        with open(file_path_yaml, 'w') as file:
-                yaml.dump(params, file, default_flow_style=False)
+        # file_path_yaml = packpath+ "/src/franka_LfD/config/LfD_params.yaml" 
+        # with open(file_path_yaml, 'w') as file:
+        #         yaml.dump(params, file, default_flow_style=False)
 
     def obtain_relevant_motion(self,vel_trans_traj, vel_quat_traj):
         """
         For segmentation purposes, we want to know whether this is
         mainly an orientational or translational motion 
         """
+    
         if  np.mean(np.linalg.norm(vel_quat_traj,axis=1)) > np.mean(np.linalg.norm(vel_trans_traj,axis=1)):
             return 'q'
         else:
@@ -206,11 +242,11 @@ def segment_normbased(Traj):
 
     for i in range(len(Traj_norm)): 
         
-        if( np.mean(Traj_norm[i:i+50]) >0.05 ) and  started_flag is False: 
+        if( np.mean(Traj_norm[i:i+50]) >0.01 ) and  started_flag is False: 
             indx_start= i 
             started_flag= True
 
-        if started_flag and  np.mean(Traj_norm[i:i+50]) <0.02 :
+        if started_flag and  np.mean(Traj_norm[i:i+50]) <0.01 :
             indx_end= max(len(Traj_norm), i+300) 
 
     return indx_start, indx_end  
@@ -252,7 +288,7 @@ if __name__ == '__main__':
     
     model_file_quat= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
     model_file = catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
-    model_file_gripper=  catkin_ws_dir + "/src/franka_LfD/data/gripper_state_demo2.txt"  
+    model_file_gripper=  catkin_ws_dir + "/src/franka_LfD/data/gripper_state_demo.txt"  
     gripper_state=np.genfromtxt(model_file_gripper)
 
 

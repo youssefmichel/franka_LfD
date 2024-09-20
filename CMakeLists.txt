@@ -72,6 +72,7 @@ catkin_package(
     eigen_conversions
     franka_hw
     franka_gripper
+    franka_control
     geometry_msgs
     hardware_interface
     joint_limits_interface

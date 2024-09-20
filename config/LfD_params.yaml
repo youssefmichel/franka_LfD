@@ -1,0 +1,8 @@
+sitffness_params:
+    stiffness_cart: [2001,2000,2000] 
+    stiffness_orient: [150,150,150] 
+    stiffness_null: 20
+
+
+
+

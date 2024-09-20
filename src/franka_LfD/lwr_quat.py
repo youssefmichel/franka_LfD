@@ -54,7 +54,7 @@ class lwr_quat(lwr):
         self.Des_traj_quat=filtfilt(b,a,self.Des_traj_quat,axis=0) 
         self.Omega=filtfilt(b,a,self.Omega,axis=0) 
         self.Des_traj=self.Omega  #since LWR is performed on omega now
-        self.N_models=18
+        self.N_models=15
             
         self.dt=0.001 
         self.Time_tot= self.N_points  *self.dt
