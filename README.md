@@ -2,38 +2,60 @@
 
 Copyright (C) 2024, by Youssef Michel.
 
-The project provides the C++ implementation of the VSDS approach which aims to generate a force field
-based on a first order DS and a desired stiffness profile in a closed loop configuration. The streamlines of the VSDS controller are illustrated below
+The project provides a Learning-from-Demonstration (LfD) interface for controlling a franka robot. The demonstrations are to be provided by the logitech F710 wireless gamepad https://amzn.eu/d/7D5hGVi 
+.Subsequently, the provided demonstrations are segmented and encoded to learn a task model consisting of several primitves, which are eventually executed on the robot. 
 
-<p float="left">
-  <img src="images/vsds_1.png" width="400" />
-  <img src="images/vsds_2.png" width="400" /> 
+## Setting up: 
+
+- Since the project depends on the franka robot, we need to install the `franka_ros` package. For more details, please check https://frankaemika.github.io/docs/installation_linux.html  
+
+- We also need the ros package for reading the joystick commands: https://github.com/ros-drivers/joystick_drivers.git . We only need the `joy` package, so make sure it is in the `/catkin_ws/src`. 
+ 
+
+- Finally, we can clone the `franka_LfD` into our workspace and `caktin_make` to build  
+
+## Demonstration Phase:
+
+- Once everything is set up, we can start providing demonstrations to the robot using the joystick. From the joystick, we have full access over the robot control. This includes:
+  - Right joystick: control in y,z translation directions. 
+  - Left joystick: rotations around y,z (commanded to the robot as unit quaternions)
+  - RT/LT: control the robot in the +/-ve x-axis (translation)
+  - X/B buttons: opening and closing of gripper. 
+ - Alternatively, we can also control the robot via the interactive marker. Simply drag the robot from the arrows to move it around. 
+ -  To start, first we have to launch our robot in gazebo (the command below launches the robot in a world with an object that can be grasped): 
+ ```
+ roslaunch franka_gazebo panda.launch rviz:=false world:=$(rospack find franka_gazebo)/world/stone.sdf x:=-0.5
+  ```
+- You should see the following: 
+
+<p float="center">
+  <img src="images/gazebo_rob.png" width="400" />
 </p>
 
-For more details, please check:
-
-> [1] Y. Michel, M. Saveriano, and D. Lee, "A Passivity-Based Approach for Variable Stiffness Control With Dynamical Systems," IEEE Transactions on Automation Science and Engineering (TASE), 2023.
-
-The main scripts in this folder are:
-
-- `VSDS_base.cpp`: contains the base class implementation of the VSDS algorithm for the translation case. The `/config` folder contains the parameters used by VSDS such as the via-points definition, initial and goal orientation.
-
-- `VSDS_qp.cpp`, `VSDS_vf.cpp`, `VSDS_org.cpp` provide the implementation of the specfic VSDS approach chosen. For more details check the above paper
- to the robot. Override the implementation based on your speficic robot.
-
-- `VSDS_main.cpp`: This scipt implements the main control loop of the VSDS control law, handling the communication with a Kuka Robot via FRI, recieving sensor
-              readings and sending force commands to the robot
-
-
-
-
-
-To launch the nodes, use the `VSDS.launch`, for instance:
+- Once we see the robot in gazebo, we can roslaunch our package to provide the demos. The interface should be set to "joy" (joystick) or "marker" (interactive marker): 
 ```
-roslaunch VSDS VSDS.launch VSDS_name:=Trapezoid_DS VS_type:=qp Stiff_type:=v
+  roslaunch franka_LfD franka_lfd.launch mode:=tele interface:=joy
 ```
 
+- There you go, you can start moving your robot around !
 
+- To check the generate motion profiles, they are saved in `rob_pose_actual.txt` (actual pos, first three columns) and `rob_pose_quat_demo.txt`(unit quaternions, and angular velocity)
 
+## Learning: 
 
+- To learn the task model, simply run the script `skill_learning_grasp.py` in `/scripts`, which reads the demonstrated trajectory from file, segments them, and learns a task model, consiting essentially from a sequence of the primitives: `move`, `open gripper` and `close gripper`  
+
+- The motions are learned (both positions and orientations) using locally weighted regression.
+
+- a DMP implemntation is also available both for positions and orientations.
+
+- N.B: Since we rely on the gripper actions to segment the task, please make sure to avoid controlling the gripper while also moving the robot. 
+
+## Control: 
+
+- Once the skill is learnt, if you wish to see the robot execute it, launch the robot in gazebo (same as before), and then use: 
+```
+roslaunch franka_LfD franka_lfd.launch mode:=auto
+```
+- The cartesian space controller then tracks the desired motion. A null space controller attempts to put the robt in configurations with high manipubablity via self motions of the elbow
 
