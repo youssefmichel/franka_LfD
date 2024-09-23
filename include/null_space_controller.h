@@ -26,7 +26,8 @@
  * @brief perfomans singularity optimization
  * 
  * The class is responsible for obtaining the optimal joint space config. 
- * that maximizes the manipubaility index
+ * that maximizes the manipubaility index. This is then used in the cartesian 
+ * impedance controller to implement the null space action
  */
 
 namespace franka_LfD { 

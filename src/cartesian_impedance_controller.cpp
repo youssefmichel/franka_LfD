@@ -292,10 +292,8 @@
         position_d_=position_d_target_ ;
         orientation_d_=orientation_d_target_ ;
 
- 
-
       // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
-    //   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
+      // position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
         
       //visualize_act_pose(position) ;
         

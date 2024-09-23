@@ -19,6 +19,13 @@ typedef Eigen::Matrix<realtype, Eigen::Dynamic, 1> Vec;
 #define eps 1.0e-12
 #endif
 
+/**
+ * @class SkillPublisher 
+ * @brief publishes the learnt skill to the robot
+ * 
+ * useful utlity functions 
+ */
+
 
 
 namespace general_utility{

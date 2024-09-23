@@ -11,7 +11,7 @@
  * @brief reads and interprets data from joystick 
  * 
  * The class is responsible for reading data from joystick, computing reference positions and
- * orientations for the robot
+ * orientations and pubishing them for the robot 
  */
 
 namespace franka_LfD {

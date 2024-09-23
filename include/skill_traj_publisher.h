@@ -17,21 +17,19 @@
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <Eigen/Dense>
-
-
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/franka_state_interface.h>
 #include <visualization_msgs/Marker.h>
 #include <gripper_controller.h>
-
 #include <utility.h> 
 
 /**
  * @class SkillPublisher 
  * @brief publishes the learnt skill to the robot
  * 
- * The base class is responsible for simply
- * orientations for the robot
+ * The base class is responsible for simply commanding a desired movement from file
+ * including both translations and orientations to the cartesian impedance controller 
+ * The child class additionally interprets the sequence of skills, including the gripper actions. 
  */
 
 

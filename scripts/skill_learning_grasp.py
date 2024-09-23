@@ -70,7 +70,8 @@ class skill_learner_grasp:
         self.Des_traj_quat = interpolate_traj(self.Des_traj_quat, None , Time_des_traj , Time_comb ) 
         self.Des_traj_quat[:,-3:]=filtfilt(b,a,self.Des_traj_quat[:,-3:],axis=0) 
 
-        
+        plt.plot(self.Des_traj)
+        plt.show()
 
 
 
@@ -162,7 +163,7 @@ class skill_learner_grasp:
                indx_st,indx_end =  segment_normbased( curr_traj[:,-3:])
             
 
-            print("indices: ", indx_st,indx_end)
+            # print("indices: ", indx_st,indx_end)
             N_red=2500 
             N_org= len(curr_traj[indx_st:indx_end,:3])
             temp=interpolate_traj(curr_traj[indx_st:indx_end,:3],N_red)
@@ -283,17 +284,15 @@ def segment_normbased(Traj):
 
 if __name__ == '__main__': 
 
-    catkin_ws_dir = os.path.expanduser("~/Codes/franka_ws") 
+    
+    catkin_ws_dir = os.getcwd()
     print(catkin_ws_dir)
+
     
     model_file_quat= catkin_ws_dir + "/src/franka_LfD/data/rob_pose_quat_demo.txt" 
     model_file = catkin_ws_dir + "/src/franka_LfD/data/rob_pose_demo.txt" 
     model_file_gripper=  catkin_ws_dir + "/src/franka_LfD/data/gripper_state_demo.txt"  
     gripper_state=np.genfromtxt(model_file_gripper)
-
-
-
-
     skill_learner_=skill_learner_grasp(model_file,model_file_quat,model_file_gripper)
 
 
