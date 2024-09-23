@@ -29,7 +29,7 @@ The project provides a Learning-from-Demonstration (LfD) interface for controlli
 - You should see the following: 
 
 <p float="center">
-  <img src="images/gazebo_rob.png" width="400" />
+  <img src="images/gazebo_rob.png" width="600" />
 </p>
 
 - Once we see the robot in gazebo, we can roslaunch our package to provide the demos. The interface should be set to "joy" (joystick) or "marker" (interactive marker): 
